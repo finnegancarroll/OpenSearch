@@ -649,6 +649,19 @@ public final class SearchPhaseController {
             : source.from());
     }
 
+    /*
+     * Returns the size of the requested top documents (from + size)
+     */
+    static int getTopDocsSizeProtobuf(ProtobufSearchRequest request) {
+        if (request.source() == null) {
+            return SearchService.DEFAULT_SIZE;
+        }
+        SearchSourceBuilder source = request.source();
+        return (source.size() == -1 ? SearchService.DEFAULT_SIZE : source.size()) + (source.from() == -1
+            ? SearchService.DEFAULT_FROM
+            : source.from());
+    }
+
     /**
      * The reduced query phase
      *
@@ -732,6 +745,10 @@ public final class SearchPhaseController {
         return requestToAggReduceContextBuilder.apply(request.source());
     }
 
+    InternalAggregation.ReduceContextBuilder getReduceContextProtobuf(ProtobufSearchRequest request) {
+        return requestToAggReduceContextBuilder.apply(request.source());
+    }
+
     /**
      * Returns a new {@link QueryPhaseResultConsumer} instance that reduces search responses incrementally.
      */
@@ -740,6 +757,29 @@ public final class SearchPhaseController {
         CircuitBreaker circuitBreaker,
         SearchProgressListener listener,
         SearchRequest request,
+        int numShards,
+        Consumer<Exception> onPartialMergeFailure
+    ) {
+        return new QueryPhaseResultConsumer(
+            request,
+            executor,
+            circuitBreaker,
+            this,
+            listener,
+            namedWriteableRegistry,
+            numShards,
+            onPartialMergeFailure
+        );
+    }
+
+    /**
+     * Returns a new {@link QueryPhaseResultConsumer} instance that reduces search responses incrementally.
+     */
+    QueryPhaseResultConsumer newSearchPhaseResults(
+        Executor executor,
+        CircuitBreaker circuitBreaker,
+        SearchProgressListener listener,
+        ProtobufSearchRequest request,
         int numShards,
         Consumer<Exception> onPartialMergeFailure
     ) {

@@ -6,43 +6,20 @@
  * compatible open source license.
  */
 
-/*
- * Licensed to Elasticsearch under one or more contributor
- * license agreements. See the NOTICE file distributed with
- * this work for additional information regarding copyright
- * ownership. Elasticsearch licenses this file to you under
- * the Apache License, Version 2.0 (the "License"); you may
- * not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-
-/*
- * Modifications Copyright OpenSearch Contributors. See
- * GitHub history for details.
- */
-
 package org.opensearch.rest.action;
 
 import org.opensearch.action.ActionListener;
-import org.opensearch.action.ActionRequest;
-import org.opensearch.action.ActionResponse;
-import org.opensearch.action.ActionType;
+import org.opensearch.action.ProtobufActionRequest;
+import org.opensearch.action.ProtobufActionResponse;
+import org.opensearch.action.ProtobufActionType;
 import org.opensearch.action.admin.cluster.node.tasks.cancel.CancelTasksRequest;
 import org.opensearch.client.Client;
 import org.opensearch.client.FilterClient;
-import org.opensearch.client.OriginSettingClient;
-import org.opensearch.client.node.NodeClient;
+import org.opensearch.client.ProtobufOriginSettingClient;
+import org.opensearch.client.ProtobufFilterClient;
+import org.opensearch.client.node.ProtobufNodeClient;
 import org.opensearch.http.HttpChannel;
-import org.opensearch.tasks.Task;
+import org.opensearch.tasks.ProtobufTask;
 import org.opensearch.tasks.TaskId;
 
 import java.util.ArrayList;
@@ -61,13 +38,13 @@ import static org.opensearch.action.admin.cluster.node.tasks.get.GetTaskAction.T
  *
  * @opensearch.api
  */
-public class RestCancellableNodeClient extends FilterClient {
+public class ProtobufRestCancellableNodeClient extends ProtobufFilterClient {
     private static final Map<HttpChannel, CloseListener> httpChannels = new ConcurrentHashMap<>();
 
-    private final NodeClient client;
+    private final ProtobufNodeClient client;
     private final HttpChannel httpChannel;
 
-    public RestCancellableNodeClient(NodeClient client, HttpChannel httpChannel) {
+    public ProtobufRestCancellableNodeClient(ProtobufNodeClient client, HttpChannel httpChannel) {
         super(client);
         this.client = client;
         this.httpChannel = httpChannel;
@@ -96,8 +73,8 @@ public class RestCancellableNodeClient extends FilterClient {
     }
 
     @Override
-    public <Request extends ActionRequest, Response extends ActionResponse> void doExecute(
-        ActionType<Response> action,
+    public <Request extends ProtobufActionRequest, Response extends ProtobufActionResponse> void doExecute(
+        ProtobufActionType<Response> action,
         Request request,
         ActionListener<Response> listener
     ) {
@@ -107,7 +84,7 @@ public class RestCancellableNodeClient extends FilterClient {
         System.out.println("Listener: " + listener);
         CloseListener closeListener = httpChannels.computeIfAbsent(httpChannel, channel -> new CloseListener());
         TaskHolder taskHolder = new TaskHolder();
-        Task task = client.executeLocally(action, request, new ActionListener<Response>() {
+        ProtobufTask task = client.executeLocally(action, request, new ActionListener<Response>() {
             @Override
             public void onResponse(Response response) {
                 try {
@@ -134,7 +111,7 @@ public class RestCancellableNodeClient extends FilterClient {
     private void cancelTask(TaskId taskId) {
         CancelTasksRequest req = new CancelTasksRequest().setTaskId(taskId).setReason("channel closed");
         // force the origin to execute the cancellation as a system user
-        new OriginSettingClient(client, TASKS_ORIGIN).admin().cluster().cancelTasks(req, ActionListener.wrap(() -> {}));
+        // new ProtobufOriginSettingClient(client, TASKS_ORIGIN).admin().cluster().cancelTasks(req, ActionListener.wrap(() -> {}));
     }
 
     private class CloseListener implements ActionListener<Void> {

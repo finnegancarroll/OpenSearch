@@ -39,6 +39,12 @@ public interface ProtobufTaskAwareRequest {
      * Returns the task object that should be used to keep track of the processing of the request.
     */
     default ProtobufTask createProtobufTask(long id, String type, String action, ProtobufTaskId parentTaskId, Map<String, String> headers) {
+        System.out.println("Creating protobuf task");
+        System.out.println("id: " + id);
+        System.out.println("type: " + type);
+        System.out.println("action: " + action);
+        System.out.println("parentTaskId: " + parentTaskId);
+        System.out.println("headers: " + headers);
         return new ProtobufTask(id, type, action, getTaskDescription(), parentTaskId, headers);
     }
 

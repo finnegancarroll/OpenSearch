@@ -6,30 +6,6 @@
  * compatible open source license.
  */
 
-/*
- * Licensed to Elasticsearch under one or more contributor
- * license agreements. See the NOTICE file distributed with
- * this work for additional information regarding copyright
- * ownership. Elasticsearch licenses this file to you under
- * the Apache License, Version 2.0 (the "License"); you may
- * not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-
-/*
- * Modifications Copyright OpenSearch Contributors. See
- * GitHub history for details.
- */
-
 package org.opensearch.action.search;
 
 import org.apache.logging.log4j.Logger;
@@ -55,9 +31,9 @@ import org.opensearch.search.SearchPhaseResult;
 import org.opensearch.search.SearchShardTarget;
 import org.opensearch.search.internal.AliasFilter;
 import org.opensearch.search.internal.InternalSearchResponse;
-import org.opensearch.search.internal.ProtobufShardSearchRequest;
 import org.opensearch.search.internal.SearchContext;
 import org.opensearch.search.internal.ShardSearchRequest;
+import org.opensearch.search.internal.ProtobufShardSearchRequest;
 import org.opensearch.search.pipeline.PipelinedRequest;
 import org.opensearch.transport.Transport;
 
@@ -84,18 +60,18 @@ import java.util.stream.Collectors;
  *
  * @opensearch.internal
  */
-abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> extends SearchPhase implements SearchPhaseContext {
+abstract class ProtobufAbstractSearchAsyncAction<Result extends SearchPhaseResult> extends SearchPhase implements SearchPhaseContext {
     private static final float DEFAULT_INDEX_BOOST = 1.0f;
     private final Logger logger;
     private final SearchTransportService searchTransportService;
     private final Executor executor;
-    private final ActionListener<SearchResponse> listener;
-    private final SearchRequest request;
+    private final ActionListener<ProtobufSearchResponse> listener;
+    private final ProtobufSearchRequest request;
     /**
      * Used by subclasses to resolve node ids to DiscoveryNodes.
      **/
     private final BiFunction<String, String, Transport.Connection> nodeIdToConnection;
-    private final SearchTask task;
+    private final ProtobufSearchTask task;
     protected final SearchPhaseResults<Result> results;
     private final ClusterState clusterState;
     private final Map<String, AliasFilter> aliasFilter;
@@ -106,8 +82,8 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     private final AtomicBoolean hasShardResponse = new AtomicBoolean(false);
     private final AtomicInteger successfulOps = new AtomicInteger();
     private final AtomicInteger skippedOps = new AtomicInteger();
-    private final TransportSearchAction.SearchTimeProvider timeProvider;
-    private final SearchResponse.Clusters clusters;
+    private final ProtobufTransportSearchAction.SearchTimeProvider timeProvider;
+    private final ProtobufSearchResponse.Clusters clusters;
 
     protected final GroupShardsIterator<SearchShardIterator> toSkipShardsIts;
     protected final GroupShardsIterator<SearchShardIterator> shardsIts;
@@ -119,7 +95,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
 
     private final List<Releasable> releasables = new ArrayList<>();
 
-    AbstractSearchAsyncAction(
+    ProtobufAbstractSearchAsyncAction(
         String name,
         Logger logger,
         SearchTransportService searchTransportService,
@@ -128,15 +104,15 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         Map<String, Float> concreteIndexBoosts,
         Map<String, Set<String>> indexRoutings,
         Executor executor,
-        SearchRequest request,
-        ActionListener<SearchResponse> listener,
+        ProtobufSearchRequest protobufSearchRequest,
+        ActionListener<ProtobufSearchResponse> listener,
         GroupShardsIterator<SearchShardIterator> shardsIts,
-        TransportSearchAction.SearchTimeProvider timeProvider,
+        ProtobufTransportSearchAction.SearchTimeProvider timeProvider,
         ClusterState clusterState,
-        SearchTask task,
+        ProtobufSearchTask task,
         SearchPhaseResults<Result> resultConsumer,
         int maxConcurrentRequestsPerNode,
-        SearchResponse.Clusters clusters
+        ProtobufSearchResponse.Clusters clusters
     ) {
         super(name);
         final List<SearchShardIterator> toSkipIterators = new ArrayList<>();
@@ -162,7 +138,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         this.logger = logger;
         this.searchTransportService = searchTransportService;
         this.executor = executor;
-        this.request = request;
+        this.request = protobufSearchRequest;
         this.task = task;
         this.listener = ActionListener.runAfter(listener, this::releaseContext);
         this.nodeIdToConnection = nodeIdToConnection;
@@ -194,7 +170,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
      * This is the main entry point for a search. This method starts the search execution of the initial phase.
      */
     public final void start() {
-        System.out.println("AbstractSearchAsyncAction start");
+        System.out.println("ProtobufAbstractSearchAsyncAction start");
         if (getNumShards() == 0) {
             System.out.println("Number of shards is 0");
             // no search shards to search on, bail with empty response
@@ -205,7 +181,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
             // total hits is null in the response if the tracking of total hits is disabled
             boolean withTotalHits = trackTotalHitsUpTo != SearchContext.TRACK_TOTAL_HITS_DISABLED;
             listener.onResponse(
-                new SearchResponse(
+                new ProtobufSearchResponse(
                     InternalSearchResponse.empty(withTotalHits),
                     null,
                     0,
@@ -224,13 +200,13 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
 
     @Override
     public final void run() {
-        System.out.println("AbstractSearchAsyncAction run: running the phase coming from phase.recordAndRun()");
+        System.out.println("ProtobufAbstractSearchAsyncAction run: running the phase coming from phase.recordAndRun()");
         for (final SearchShardIterator iterator : toSkipShardsIts) {
             assert iterator.skip();
             skipShard(iterator);
         }
         if (shardsIts.size() > 0) {
-            assert request.allowPartialSearchResults() != null : "SearchRequest missing setting for allowPartialSearchResults";
+            assert request.allowPartialSearchResults() != null : "ProtobufSearchRequest missing setting for allowPartialSearchResults";
             if (request.allowPartialSearchResults() == false) {
                 final StringBuilder missingShards = new StringBuilder();
                 // Fail-fast verification of all shards being available
@@ -377,7 +353,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
             onPhaseFailure(currentPhase, "all shards failed", cause);
         } else {
             Boolean allowPartialResults = request.allowPartialSearchResults();
-            assert allowPartialResults != null : "SearchRequest missing setting for allowPartialSearchResults";
+            assert allowPartialResults != null : "ProtobufSearchRequest missing setting for allowPartialSearchResults";
             if (allowPartialResults == false && successfulOps.get() != getNumShards()) {
                 // check if there are actual failures in the atomic array since
                 // successful retries can reset the failures to null
@@ -620,32 +596,32 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     }
 
     @Override
-    public final SearchTask getTask() {
+    public final ProtobufSearchTask getProtobufTask() {
         return task;
     }
 
     @Override
-    public final SearchRequest getRequest() {
+    public final ProtobufSearchRequest getProtobufRequest() {
         return request;
     }
 
     @Override
-    public final ProtobufSearchTask getProtobufTask() {
-        throw new UnsupportedOperationException("Unimplemented method 'getProtobufTask'");
+    public final SearchTask getTask() {
+        throw new UnsupportedOperationException("Unimplemented method 'getTask'");
     }
 
     @Override
-    public final ProtobufSearchRequest getProtobufRequest() {
-        throw new UnsupportedOperationException("Unimplemented method 'getProtobufRequest'");
+    public final SearchRequest getRequest() {
+        throw new UnsupportedOperationException("Unimplemented method 'getRequest'");
     }
 
-    protected final SearchResponse buildSearchResponse(
+    protected final ProtobufSearchResponse buildSearchResponse(
         InternalSearchResponse internalSearchResponse,
         ShardSearchFailure[] failures,
         String scrollId,
         String searchContextId
     ) {
-        return new SearchResponse(
+        return new ProtobufSearchResponse(
             internalSearchResponse,
             scrollId,
             getNumShards(),
@@ -668,7 +644,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     public void sendSearchResponse(InternalSearchResponse internalSearchResponse, AtomicArray<SearchPhaseResult> queryResults) {
         ShardSearchFailure[] failures = buildShardFailures();
         Boolean allowPartialResults = request.allowPartialSearchResults();
-        assert allowPartialResults != null : "SearchRequest missing setting for allowPartialSearchResults";
+        assert allowPartialResults != null : "ProtobufSearchRequest missing setting for allowPartialSearchResults";
         if (allowPartialResults == false && failures.length > 0) {
             raisePhaseFailure(new SearchPhaseExecutionException("", "Shard failures", null, failures));
         } else {
@@ -726,9 +702,9 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
      */
     final void onPhaseDone() {  // as a tribute to @kimchy aka. finishHim()
         final SearchPhase nextPhase = getNextPhase(results, this);
-        if (request instanceof PipelinedRequest && nextPhase != null) {
-            ((PipelinedRequest) request).transformSearchPhaseResults(results, this, this.getName(), nextPhase.getName());
-        }
+        // if (request instanceof PipelinedRequest && nextPhase != null) {
+        //     ((PipelinedRequest) request).transformSearchPhaseResults(results, this, this.getName(), nextPhase.getName());
+        // }
         executeNextPhase(this, nextPhase);
     }
 
@@ -754,12 +730,17 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
 
     @Override
     public final ShardSearchRequest buildShardSearchRequest(SearchShardIterator shardIt) {
+        throw new UnsupportedOperationException("Unimplemented method 'buildShardSearchRequest'");
+    }
+
+    @Override
+    public final ProtobufShardSearchRequest buildProtobufShardSearchRequest(SearchShardIterator shardIt) {
         AliasFilter filter = aliasFilter.get(shardIt.shardId().getIndex().getUUID());
         assert filter != null;
         float indexBoost = concreteIndexBoosts.getOrDefault(shardIt.shardId().getIndex().getUUID(), DEFAULT_INDEX_BOOST);
         String indexName = shardIt.shardId().getIndex().getName();
         final String[] routings = indexRoutings.getOrDefault(indexName, Collections.emptySet()).toArray(new String[0]);
-        ShardSearchRequest shardRequest = new ShardSearchRequest(
+        ProtobufShardSearchRequest shardRequest = new ProtobufShardSearchRequest(
             shardIt.getOriginalIndices(),
             request,
             shardIt.shardId(),
@@ -778,12 +759,6 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         // Note that, we have to disable this shortcut for queries that create a context (scroll and search context).
         shardRequest.canReturnNullResponseIfMatchNoDocs(hasShardResponse.get() && shardRequest.scroll() == null);
         return shardRequest;
-    }
-
-    @Override
-    public final ProtobufShardSearchRequest buildProtobufShardSearchRequest(SearchShardIterator shardIt) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'buildProtobufShardSearchRequest'");
     }
 
     /**

@@ -6,48 +6,26 @@
  * compatible open source license.
  */
 
-/*
- * Licensed to Elasticsearch under one or more contributor
- * license agreements. See the NOTICE file distributed with
- * this work for additional information regarding copyright
- * ownership. Elasticsearch licenses this file to you under
- * the Apache License, Version 2.0 (the "License"); you may
- * not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-
-/*
- * Modifications Copyright OpenSearch Contributors. See
- * GitHub history for details.
- */
-
 package org.opensearch.rest.action.search;
 
 import org.opensearch.ExceptionsHelper;
 import org.opensearch.action.ActionRequestValidationException;
-import org.opensearch.action.search.SearchAction;
+import org.opensearch.action.search.ProtobufSearchAction;
+import org.opensearch.action.search.ProtobufSearchRequest;
 import org.opensearch.action.search.SearchContextId;
-import org.opensearch.action.search.SearchRequest;
+import org.opensearch.action.search.ProtobufSearchRequest;
 import org.opensearch.action.support.IndicesOptions;
 import org.opensearch.client.node.NodeClient;
+import org.opensearch.client.node.ProtobufNodeClient;
 import org.opensearch.common.Booleans;
 import org.opensearch.core.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.core.common.Strings;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.index.query.QueryBuilder;
-import org.opensearch.rest.BaseRestHandler;
+import org.opensearch.rest.ProtobufBaseRestHandler;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestActions;
-import org.opensearch.rest.action.RestCancellableNodeClient;
+import org.opensearch.rest.action.ProtobufRestCancellableNodeClient;
 import org.opensearch.rest.action.RestStatusToXContentListener;
 import org.opensearch.search.Scroll;
 import org.opensearch.search.builder.SearchSourceBuilder;
@@ -79,7 +57,7 @@ import static org.opensearch.search.suggest.SuggestBuilders.termSuggestion;
  *
  * @opensearch.api
  */
-public class RestSearchAction extends BaseRestHandler {
+public class ProtobufRestSearchAction extends ProtobufBaseRestHandler {
     /**
      * Indicates whether hits.total should be rendered as an integer or an object
      * in the rest search response.
@@ -102,18 +80,18 @@ public class RestSearchAction extends BaseRestHandler {
     public List<Route> routes() {
         return unmodifiableList(
             asList(
-                new Route(GET, "/_search"),
-                new Route(POST, "/_search"),
-                new Route(GET, "/{index}/_search"),
-                new Route(POST, "/{index}/_search")
+                new Route(GET, "/_search_protobuf"),
+                new Route(POST, "/_search_protobuf"),
+                new Route(GET, "/{index}/_search_protobuf"),
+                new Route(POST, "/{index}/_search_protobuf")
             )
         );
     }
 
     @Override
-    public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
-        System.out.println("In search API");
-        SearchRequest searchRequest = new SearchRequest();
+    public RestChannelConsumer prepareRequest(final RestRequest request, final ProtobufNodeClient client) throws IOException {
+        System.out.println("In protobuf search API");
+        ProtobufSearchRequest searchRequest = new ProtobufSearchRequest();
         /*
          * We have to pull out the call to `source().size(size)` because
          * _update_by_query and _delete_by_query uses this same parsing
@@ -132,21 +110,21 @@ public class RestSearchAction extends BaseRestHandler {
         );
 
         return channel -> {
-            RestCancellableNodeClient cancelClient = new RestCancellableNodeClient(client, request.getHttpChannel());
+            ProtobufRestCancellableNodeClient cancelClient = new ProtobufRestCancellableNodeClient(client, request.getHttpChannel());
             System.out.println("Cancel client execute");
-            cancelClient.execute(SearchAction.INSTANCE, searchRequest, new RestStatusToXContentListener<>(channel));
+            cancelClient.execute(ProtobufSearchAction.INSTANCE, searchRequest, new RestStatusToXContentListener<>(channel));
         };
     }
 
     /**
-     * Parses the rest request on top of the SearchRequest, preserving values that are not overridden by the rest request.
+     * Parses the rest request on top of the ProtobufSearchRequest, preserving values that are not overridden by the rest request.
      *
      * @param requestContentParser body of the request to read. This method does not attempt to read the body from the {@code request}
      *        parameter
      * @param setSize how the size url parameter is handled. {@code udpate_by_query} and regular search differ here.
      */
     public static void parseSearchRequest(
-        SearchRequest searchRequest,
+        ProtobufSearchRequest searchRequest,
         RestRequest request,
         XContentParser requestContentParser,
         NamedWriteableRegistry namedWriteableRegistry,
@@ -164,7 +142,7 @@ public class RestSearchAction extends BaseRestHandler {
         final int batchedReduceSize = request.paramAsInt("batched_reduce_size", searchRequest.getBatchedReduceSize());
         searchRequest.setBatchedReduceSize(batchedReduceSize);
         if (request.hasParam("pre_filter_shard_size")) {
-            searchRequest.setPreFilterShardSize(request.paramAsInt("pre_filter_shard_size", SearchRequest.DEFAULT_PRE_FILTER_SHARD_SIZE));
+            searchRequest.setPreFilterShardSize(request.paramAsInt("pre_filter_shard_size", ProtobufSearchRequest.DEFAULT_PRE_FILTER_SHARD_SIZE));
         }
 
         if (request.hasParam("max_concurrent_shard_requests")) {
@@ -331,13 +309,13 @@ public class RestSearchAction extends BaseRestHandler {
         }
     }
 
-    static void preparePointInTime(SearchRequest request, RestRequest restRequest, NamedWriteableRegistry namedWriteableRegistry) {
+    static void preparePointInTime(ProtobufSearchRequest request, RestRequest restRequest, NamedWriteableRegistry namedWriteableRegistry) {
         assert request.pointInTimeBuilder() != null;
         ActionRequestValidationException validationException = null;
         if (request.indices().length > 0) {
             validationException = addValidationError("[indices] cannot be used with point in time", validationException);
         }
-        if (request.indicesOptions() != SearchRequest.DEFAULT_INDICES_OPTIONS) {
+        if (request.indicesOptions() != ProtobufSearchRequest.DEFAULT_INDICES_OPTIONS) {
             validationException = addValidationError("[indicesOptions] cannot be used with point in time", validationException);
         }
         if (request.routing() != null) {
@@ -376,7 +354,7 @@ public class RestSearchAction extends BaseRestHandler {
      * is used in conjunction with a lower bound value (other than {@link SearchContext#DEFAULT_TRACK_TOTAL_HITS_UP_TO})
      * for the track_total_hits option.
      */
-    public static void checkRestTotalHits(RestRequest restRequest, SearchRequest searchRequest) {
+    public static void checkRestTotalHits(RestRequest restRequest, ProtobufSearchRequest searchRequest) {
         boolean totalHitsAsInt = restRequest.paramAsBoolean(TOTAL_HITS_AS_INT_PARAM, false);
         if (totalHitsAsInt == false) {
             return;

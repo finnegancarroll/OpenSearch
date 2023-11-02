@@ -36,6 +36,7 @@ import org.opensearch.common.Nullable;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.search.fetch.FetchSearchResult;
+import org.opensearch.search.internal.ProtobufShardSearchRequest;
 import org.opensearch.search.internal.ShardSearchContextId;
 import org.opensearch.search.internal.ShardSearchRequest;
 import org.opensearch.search.query.QuerySearchResult;
@@ -55,10 +56,12 @@ import java.io.IOException;
  */
 public abstract class SearchPhaseResult extends TransportResponse {
 
+    // TODO: proto message
     private SearchShardTarget searchShardTarget;
     private int shardIndex = -1;
     protected ShardSearchContextId contextId;
     private ShardSearchRequest shardSearchRequest;
+    private ProtobufShardSearchRequest protobufShardSearchRequest;
     private RescoreDocIds rescoreDocIds = RescoreDocIds.EMPTY;
 
     protected SearchPhaseResult() {
@@ -66,6 +69,10 @@ public abstract class SearchPhaseResult extends TransportResponse {
     }
 
     protected SearchPhaseResult(StreamInput in) throws IOException {
+        super(in);
+    }
+
+    protected SearchPhaseResult(byte[] in) throws IOException {
         super(in);
     }
 
@@ -119,8 +126,17 @@ public abstract class SearchPhaseResult extends TransportResponse {
         return shardSearchRequest;
     }
 
+    @Nullable
+    public ProtobufShardSearchRequest getProtobufShardSearchRequest() {
+        return protobufShardSearchRequest;
+    }
+
     public void setShardSearchRequest(ShardSearchRequest shardSearchRequest) {
         this.shardSearchRequest = shardSearchRequest;
+    }
+
+    public void setProtobufShardSearchRequest(ProtobufShardSearchRequest protobufShardSearchRequest) {
+        this.protobufShardSearchRequest = protobufShardSearchRequest;
     }
 
     public RescoreDocIds getRescoreDocIds() {

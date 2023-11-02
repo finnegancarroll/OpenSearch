@@ -47,6 +47,7 @@ import java.util.Objects;
  */
 public class LegacyReaderContext extends ReaderContext {
     private final ShardSearchRequest shardSearchRequest;
+    private final ProtobufShardSearchRequest protobufShardSearchRequest;
     private final ScrollContext scrollContext;
     private final Engine.Searcher searcher;
 
@@ -65,6 +66,43 @@ public class LegacyReaderContext extends ReaderContext {
         assert shardSearchRequest.readerId() == null;
         assert shardSearchRequest.keepAlive() == null;
         this.shardSearchRequest = Objects.requireNonNull(shardSearchRequest);
+        this.protobufShardSearchRequest = null;
+        if (shardSearchRequest.scroll() != null) {
+            // Search scroll requests are special, they don't hold indices names so we have
+            // to reuse the searcher created on the request that initialized the scroll.
+            // This ensures that we wrap the searcher's reader with the user's permissions
+            // when they are available.
+            final Engine.Searcher delegate = searcherSupplier.acquireSearcher("search");
+            addOnClose(delegate);
+            // wrap the searcher so that closing is a noop, the actual closing happens when this context is closed
+            this.searcher = new Engine.Searcher(
+                delegate.source(),
+                delegate.getDirectoryReader(),
+                delegate.getSimilarity(),
+                delegate.getQueryCache(),
+                delegate.getQueryCachingPolicy(),
+                () -> {}
+            );
+            this.scrollContext = new ScrollContext();
+        } else {
+            this.scrollContext = null;
+            this.searcher = null;
+        }
+    }
+
+    public LegacyReaderContext(
+        ShardSearchContextId id,
+        IndexService indexService,
+        IndexShard indexShard,
+        Engine.SearcherSupplier reader,
+        ProtobufShardSearchRequest shardSearchRequest,
+        long keepAliveInMillis
+    ) {
+        super(id, indexService, indexShard, reader, keepAliveInMillis, false);
+        assert shardSearchRequest.readerId() == null;
+        assert shardSearchRequest.keepAlive() == null;
+        this.shardSearchRequest = null;
+        this.protobufShardSearchRequest = Objects.requireNonNull(shardSearchRequest);
         if (shardSearchRequest.scroll() != null) {
             // Search scroll requests are special, they don't hold indices names so we have
             // to reuse the searcher created on the request that initialized the scroll.

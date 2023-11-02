@@ -40,6 +40,7 @@ import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.search.SearchPhaseResult;
 import org.opensearch.search.SearchShardTarget;
+import org.opensearch.search.internal.ProtobufShardSearchRequest;
 import org.opensearch.search.internal.ShardSearchContextId;
 import org.opensearch.search.internal.ShardSearchRequest;
 
@@ -81,10 +82,20 @@ public class DfsSearchResult extends SearchPhaseResult {
         setShardSearchRequest(in.readOptionalWriteable(ShardSearchRequest::new));
     }
 
+    public DfsSearchResult(byte[] in) throws IOException {
+        super(in);
+    }
+
     public DfsSearchResult(ShardSearchContextId contextId, SearchShardTarget shardTarget, ShardSearchRequest shardSearchRequest) {
         this.setSearchShardTarget(shardTarget);
         this.contextId = contextId;
         setShardSearchRequest(shardSearchRequest);
+    }
+
+    public DfsSearchResult(ShardSearchContextId contextId, SearchShardTarget shardTarget, ProtobufShardSearchRequest shardSearchRequest) {
+        this.setSearchShardTarget(shardTarget);
+        this.contextId = contextId;
+        setProtobufShardSearchRequest(shardSearchRequest);
     }
 
     public DfsSearchResult maxDoc(int maxDoc) {

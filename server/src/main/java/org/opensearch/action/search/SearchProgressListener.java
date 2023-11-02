@@ -72,6 +72,16 @@ public abstract class SearchProgressListener {
     protected void onListShards(List<SearchShard> shards, List<SearchShard> skippedShards, Clusters clusters, boolean fetchPhase) {}
 
     /**
+     * Executed when shards are ready to be queried.
+     *
+     * @param shards The list of shards to query.
+     * @param skippedShards The list of skipped shards.
+     * @param clusters The statistics for remote clusters included in the search.
+     * @param fetchPhase <code>true</code> if the search needs a fetch phase, <code>false</code> otherwise.
+     **/
+    protected void onListShardsProtobuf(List<SearchShard> shards, List<SearchShard> skippedShards, ProtobufSearchResponse.Clusters clusters, boolean fetchPhase) {}
+
+    /**
      * Executed when a shard returns a query result.
      *
      * @param shardIndex The index of the shard in the list provided by {@link SearchProgressListener#onListShards} )}.
@@ -128,6 +138,15 @@ public abstract class SearchProgressListener {
         this.shards = shards;
         try {
             onListShards(shards, skippedShards, clusters, fetchPhase);
+        } catch (Exception e) {
+            logger.warn(() -> new ParameterizedMessage("Failed to execute progress listener on list shards"), e);
+        }
+    }
+
+    final void notifyListShardsProtobuf(List<SearchShard> shards, List<SearchShard> skippedShards, ProtobufSearchResponse.Clusters clusters, boolean fetchPhase) {
+        this.shards = shards;
+        try {
+            onListShardsProtobuf(shards, skippedShards, clusters, fetchPhase);
         } catch (Exception e) {
             logger.warn(() -> new ParameterizedMessage("Failed to execute progress listener on list shards"), e);
         }

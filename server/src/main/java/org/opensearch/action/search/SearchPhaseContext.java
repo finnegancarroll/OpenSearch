@@ -39,6 +39,7 @@ import org.opensearch.common.lease.Releasable;
 import org.opensearch.search.SearchPhaseResult;
 import org.opensearch.search.SearchShardTarget;
 import org.opensearch.search.internal.InternalSearchResponse;
+import org.opensearch.search.internal.ProtobufShardSearchRequest;
 import org.opensearch.search.internal.ShardSearchContextId;
 import org.opensearch.search.internal.ShardSearchRequest;
 import org.opensearch.transport.Transport;
@@ -72,6 +73,16 @@ public interface SearchPhaseContext extends Executor {
      * Returns the currently executing search request
      */
     SearchRequest getRequest();
+
+    /**
+     * Returns the currently executing search task
+     */
+    ProtobufSearchTask getProtobufTask();
+
+    /**
+     * Returns the currently executing search request
+     */
+    ProtobufSearchRequest getProtobufRequest();
 
     /**
      * Builds and sends the final search response back to the user.
@@ -134,6 +145,11 @@ public interface SearchPhaseContext extends Executor {
      * Builds an request for the initial search phase.
      */
     ShardSearchRequest buildShardSearchRequest(SearchShardIterator shardIt);
+
+    /**
+     * Builds an request for the initial search phase.
+     */
+    ProtobufShardSearchRequest buildProtobufShardSearchRequest(SearchShardIterator shardIt);
 
     /**
      * Processes the phase transition from on phase to another. This method handles all errors that happen during the initial run execution

@@ -44,6 +44,7 @@ import org.opensearch.search.SearchPhaseResult;
 import org.opensearch.search.SearchShardTarget;
 import org.opensearch.search.aggregations.InternalAggregation;
 import org.opensearch.search.aggregations.InternalAggregations;
+import org.opensearch.search.internal.ProtobufShardSearchRequest;
 import org.opensearch.search.internal.ShardSearchContextId;
 import org.opensearch.search.internal.ShardSearchRequest;
 import org.opensearch.search.profile.NetworkTime;
@@ -62,6 +63,7 @@ import static org.opensearch.common.lucene.Lucene.writeTopDocs;
  */
 public final class QuerySearchResult extends SearchPhaseResult {
 
+    // TODO: proto message
     private int from;
     private int size;
     private TopDocsAndMaxScore topDocsAndMaxScore;
@@ -101,11 +103,27 @@ public final class QuerySearchResult extends SearchPhaseResult {
         }
     }
 
+    public QuerySearchResult(byte[] in) throws IOException {
+        super(in);
+        isNull = true;
+        if (isNull == false) {
+            ShardSearchContextId id = null;
+            // readFromWithId(id, in);
+        }
+    }
+
     public QuerySearchResult(ShardSearchContextId contextId, SearchShardTarget shardTarget, ShardSearchRequest shardSearchRequest) {
         this.contextId = contextId;
         setSearchShardTarget(shardTarget);
         isNull = false;
         setShardSearchRequest(shardSearchRequest);
+    }
+
+    public QuerySearchResult(ShardSearchContextId contextId, SearchShardTarget shardTarget, ProtobufShardSearchRequest shardSearchRequest) {
+        this.contextId = contextId;
+        setSearchShardTarget(shardTarget);
+        isNull = false;
+        setProtobufShardSearchRequest(shardSearchRequest);
     }
 
     private QuerySearchResult(boolean isNull) {

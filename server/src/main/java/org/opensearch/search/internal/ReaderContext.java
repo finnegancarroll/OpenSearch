@@ -186,6 +186,11 @@ public class ReaderContext implements Releasable {
         return Objects.requireNonNull(other);
     }
 
+    // BWC
+    public ProtobufShardSearchRequest getShardSearchRequestProtobuf(ProtobufShardSearchRequest other) {
+        return Objects.requireNonNull(other);
+    }
+
     public ScrollContext scrollContext() {
         return null;
     }

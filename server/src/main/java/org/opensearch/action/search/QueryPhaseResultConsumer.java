@@ -119,6 +119,38 @@ public class QueryPhaseResultConsumer extends ArraySearchPhaseResults<SearchPhas
         this.pendingMerges = new PendingMerges(batchReduceSize, request.resolveTrackTotalHitsUpTo());
     }
 
+    /**
+     * Creates a {@link QueryPhaseResultConsumer} that incrementally reduces aggregation results
+     * as shard results are consumed.
+     */
+    public QueryPhaseResultConsumer(
+        ProtobufSearchRequest request,
+        Executor executor,
+        CircuitBreaker circuitBreaker,
+        SearchPhaseController controller,
+        SearchProgressListener progressListener,
+        NamedWriteableRegistry namedWriteableRegistry,
+        int expectedResultSize,
+        Consumer<Exception> onPartialMergeFailure
+    ) {
+        super(expectedResultSize);
+        this.executor = executor;
+        this.circuitBreaker = circuitBreaker;
+        this.controller = controller;
+        this.progressListener = progressListener;
+        this.aggReduceContextBuilder = controller.getReduceContextProtobuf(request);
+        this.namedWriteableRegistry = namedWriteableRegistry;
+        this.topNSize = SearchPhaseController.getTopDocsSizeProtobuf(request);
+        this.performFinalReduce = request.isFinalReduce();
+        this.onPartialMergeFailure = onPartialMergeFailure;
+
+        SearchSourceBuilder source = request.source();
+        this.hasTopDocs = source == null || source.size() != 0;
+        this.hasAggs = source != null && source.aggregations() != null;
+        int batchReduceSize = (hasAggs || hasTopDocs) ? Math.min(request.getBatchedReduceSize(), expectedResultSize) : expectedResultSize;
+        this.pendingMerges = new PendingMerges(batchReduceSize, request.resolveTrackTotalHitsUpTo());
+    }
+
     @Override
     public void close() {
         Releasables.close(pendingMerges);

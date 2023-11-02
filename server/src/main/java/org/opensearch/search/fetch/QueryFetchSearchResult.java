@@ -48,6 +48,7 @@ import java.io.IOException;
  */
 public final class QueryFetchSearchResult extends SearchPhaseResult {
 
+    // TODO: proto message
     private final QuerySearchResult queryResult;
     private final FetchSearchResult fetchResult;
 
@@ -55,6 +56,12 @@ public final class QueryFetchSearchResult extends SearchPhaseResult {
         super(in);
         queryResult = new QuerySearchResult(in);
         fetchResult = new FetchSearchResult(in);
+    }
+
+    public QueryFetchSearchResult(byte[] in) throws IOException {
+        super(in);
+        queryResult = null;
+        fetchResult = null;
     }
 
     public QueryFetchSearchResult(QuerySearchResult queryResult, FetchSearchResult fetchResult) {

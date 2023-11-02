@@ -267,6 +267,8 @@ import org.opensearch.action.search.DeleteSearchPipelineTransportAction;
 import org.opensearch.action.search.GetSearchPipelineAction;
 import org.opensearch.action.search.GetSearchPipelineTransportAction;
 import org.opensearch.action.search.MultiSearchAction;
+import org.opensearch.action.search.ProtobufSearchAction;
+import org.opensearch.action.search.ProtobufTransportSearchAction;
 import org.opensearch.action.search.GetAllPitsAction;
 import org.opensearch.action.search.PutSearchPipelineAction;
 import org.opensearch.action.search.PutSearchPipelineTransportAction;
@@ -459,6 +461,7 @@ import org.opensearch.rest.action.ingest.RestDeletePipelineAction;
 import org.opensearch.rest.action.ingest.RestGetPipelineAction;
 import org.opensearch.rest.action.ingest.RestPutPipelineAction;
 import org.opensearch.rest.action.ingest.RestSimulatePipelineAction;
+import org.opensearch.rest.action.search.ProtobufRestSearchAction;
 import org.opensearch.rest.action.search.RestClearScrollAction;
 import org.opensearch.rest.action.search.RestCountAction;
 import org.opensearch.rest.action.search.RestCreatePitAction;
@@ -893,6 +896,7 @@ public class ActionModule extends AbstractModule {
         actions.register(ProtobufNodesInfoAction.INSTANCE, ProtobufTransportNodesInfoAction.class);
         actions.register(ProtobufNodesStatsAction.INSTANCE, ProtobufTransportNodesStatsAction.class);
         actions.register(ProtobufClusterStateAction.INSTANCE, ProtobufTransportClusterStateAction.class);
+        actions.register(ProtobufSearchAction.INSTANCE, ProtobufTransportSearchAction.class);
 
         return unmodifiableMap(actions.getRegistry());
     }
@@ -1130,6 +1134,9 @@ public class ActionModule extends AbstractModule {
         // CAT API
         registerHandler.accept(new ProtobufRestNodesAction());
         registerHandler.accept(new ProtobufRestCatAction(catActions));
+
+        // Search API
+        registerHandler.accept(new ProtobufRestSearchAction());
     }
 
     @Override

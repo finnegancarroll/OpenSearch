@@ -36,10 +36,12 @@ import org.opensearch.action.ActionListener;
 import org.opensearch.action.ActionListenerResponseHandler;
 import org.opensearch.action.IndicesRequest;
 import org.opensearch.action.OriginalIndices;
+import org.opensearch.action.ProtobufActionListenerResponseHandler;
 import org.opensearch.action.support.ChannelActionListener;
 import org.opensearch.action.support.IndicesOptions;
 import org.opensearch.cluster.node.DiscoveryNode;
 import org.opensearch.common.Nullable;
+import org.opensearch.core.common.io.stream.ProtobufWriteable;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.common.io.stream.Writeable;
@@ -48,13 +50,17 @@ import org.opensearch.search.SearchPhaseResult;
 import org.opensearch.search.SearchService;
 import org.opensearch.search.dfs.DfsSearchResult;
 import org.opensearch.search.fetch.FetchSearchResult;
+import org.opensearch.search.fetch.ProtobufShardFetchRequest;
+import org.opensearch.search.fetch.ProtobufShardFetchSearchRequest;
 import org.opensearch.search.fetch.QueryFetchSearchResult;
 import org.opensearch.search.fetch.ScrollQueryFetchSearchResult;
 import org.opensearch.search.fetch.ShardFetchRequest;
 import org.opensearch.search.fetch.ShardFetchSearchRequest;
 import org.opensearch.search.internal.InternalScrollSearchRequest;
+import org.opensearch.search.internal.ProtobufShardSearchRequest;
 import org.opensearch.search.internal.ShardSearchContextId;
 import org.opensearch.search.internal.ShardSearchRequest;
+import org.opensearch.search.query.ProtobufQuerySearchRequest;
 import org.opensearch.search.query.QuerySearchRequest;
 import org.opensearch.search.query.QuerySearchResult;
 import org.opensearch.search.query.ScrollQuerySearchResult;
@@ -252,6 +258,27 @@ public class SearchTransportService {
         );
     }
 
+    public void sendExecuteQueryProtobuf(
+        Transport.Connection connection,
+        final ProtobufShardSearchRequest request,
+        ProtobufSearchTask task,
+        final SearchActionListener<SearchPhaseResult> listener
+    ) {
+        // we optimize this and expect a QueryFetchSearchResult if we only have a single shard in the search request
+        // this used to be the QUERY_AND_FETCH which doesn't exist anymore.
+        final boolean fetchDocuments = request.numberOfShards() == 1;
+        ProtobufWriteable.Reader<SearchPhaseResult> reader = fetchDocuments ? QueryFetchSearchResult::new : QuerySearchResult::new;
+
+        final ActionListener handler = responseWrapper.apply(connection, listener);
+        transportService.sendChildRequestProtobuf(
+            connection,
+            QUERY_ACTION_NAME,
+            request,
+            task,
+            new ProtobufConnectionCountingHandler<>(handler, reader, clientConnections, connection.getNode().getId())
+        );
+    }
+
     public void sendExecuteQuery(
         Transport.Connection connection,
         final QuerySearchRequest request,
@@ -306,6 +333,15 @@ public class SearchTransportService {
         sendExecuteFetch(connection, FETCH_ID_ACTION_NAME, request, task, listener);
     }
 
+    public void sendExecuteFetchProtobuf(
+        Transport.Connection connection,
+        final ProtobufShardFetchSearchRequest request,
+        ProtobufSearchTask task,
+        final SearchActionListener<FetchSearchResult> listener
+    ) {
+        sendExecuteFetchProtobuf(connection, FETCH_ID_ACTION_NAME, request, task, listener);
+    }
+
     public void sendExecuteFetchScroll(
         Transport.Connection connection,
         final ShardFetchRequest request,
@@ -323,6 +359,22 @@ public class SearchTransportService {
         final SearchActionListener<FetchSearchResult> listener
     ) {
         transportService.sendChildRequest(
+            connection,
+            action,
+            request,
+            task,
+            new ConnectionCountingHandler<>(listener, FetchSearchResult::new, clientConnections, connection.getNode().getId())
+        );
+    }
+
+    private void sendExecuteFetchProtobuf(
+        Transport.Connection connection,
+        String action,
+        final ProtobufShardFetchRequest request,
+        ProtobufSearchTask task,
+        final SearchActionListener<FetchSearchResult> listener
+    ) {
+        transportService.sendChildRequestProtobuf(
             connection,
             action,
             request,
@@ -698,6 +750,68 @@ public class SearchTransportService {
         TransportActionProxy.registerProxyAction(transportService, UPDATE_READER_CONTEXT_ACTION_NAME, UpdatePitContextResponse::new);
     }
 
+    public static void registerRequestHandlerProtobuf(TransportService transportService, SearchService searchService) {
+        transportService.registerRequestHandlerProtobuf(
+            QUERY_ACTION_NAME,
+            ThreadPool.Names.SAME,
+            ProtobufShardSearchRequest::new,
+            (request, channel, task) -> {
+                searchService.executeQueryPhaseProtobuf(
+                    request,
+                    false,
+                    (ProtobufSearchShardTask) task,
+                    new ChannelActionListener<>(channel, QUERY_ACTION_NAME, request)
+                );
+            }
+        );
+        TransportActionProxy.registerProxyActionWithDynamicResponseTypeProtobuf(
+            transportService,
+            QUERY_ACTION_NAME,
+            (request) -> ((ProtobufShardSearchRequest) request).numberOfShards() == 1 ? QueryFetchSearchResult::new : QuerySearchResult::new
+        );
+
+        transportService.registerRequestHandlerProtobuf(
+            QUERY_ID_ACTION_NAME,
+            ThreadPool.Names.SAME,
+            ProtobufQuerySearchRequest::new,
+            (request, channel, task) -> {
+                searchService.executeQueryPhaseProtobuf(
+                    request,
+                    (ProtobufSearchShardTask) task,
+                    new ChannelActionListener<>(channel, QUERY_ID_ACTION_NAME, request)
+                );
+            }
+        );
+        TransportActionProxy.registerProxyActionProtobuf(transportService, QUERY_ID_ACTION_NAME, QuerySearchResult::new);
+
+        transportService.registerRequestHandlerProtobuf(
+            FETCH_ID_ACTION_NAME,
+            ThreadPool.Names.SAME,
+            true,
+            true,
+            ProtobufShardFetchSearchRequest::new,
+            (request, channel, task) -> {
+                searchService.executeFetchPhaseProtobuf(
+                    request,
+                    (ProtobufSearchShardTask) task,
+                    new ChannelActionListener<>(channel, FETCH_ID_ACTION_NAME, request)
+                );
+            }
+        );
+        TransportActionProxy.registerProxyActionProtobuf(transportService, FETCH_ID_ACTION_NAME, FetchSearchResult::new);
+
+        // this is cheap, it does not fetch during the rewrite phase, so we can let it quickly execute on a networking thread
+        transportService.registerRequestHandlerProtobuf(
+            QUERY_CAN_MATCH_NAME,
+            ThreadPool.Names.SAME,
+            ProtobufShardSearchRequest::new,
+            (request, channel, task) -> {
+                searchService.canMatchProtobuf(request, new ChannelActionListener<>(channel, QUERY_CAN_MATCH_NAME, request));
+            }
+        );
+        TransportActionProxy.registerProxyActionProtobuf(transportService, QUERY_CAN_MATCH_NAME, SearchService.CanMatchResponse::new);
+    }
+
     /**
      * Returns a connection to the given node on the provided cluster. If the cluster alias is <code>null</code> the node will be resolved
      * against the local cluster.
@@ -725,6 +839,58 @@ public class SearchTransportService {
         ConnectionCountingHandler(
             final ActionListener<? super Response> listener,
             final Writeable.Reader<Response> responseReader,
+            final Map<String, Long> clientConnections,
+            final String nodeId
+        ) {
+            super(listener, responseReader);
+            this.clientConnections = clientConnections;
+            this.nodeId = nodeId;
+            // Increment the number of connections for this node by one
+            clientConnections.compute(nodeId, (id, conns) -> conns == null ? 1 : conns + 1);
+        }
+
+        @Override
+        public void handleResponse(Response response) {
+            super.handleResponse(response);
+            // Decrement the number of connections or remove it entirely if there are no more connections
+            // We need to remove the entry here so we don't leak when nodes go away forever
+            assert assertNodePresent();
+            clientConnections.computeIfPresent(nodeId, (id, conns) -> conns.longValue() == 1 ? null : conns - 1);
+        }
+
+        @Override
+        public void handleException(TransportException e) {
+            super.handleException(e);
+            // Decrement the number of connections or remove it entirely if there are no more connections
+            // We need to remove the entry here so we don't leak when nodes go away forever
+            assert assertNodePresent();
+            clientConnections.computeIfPresent(nodeId, (id, conns) -> conns.longValue() == 1 ? null : conns - 1);
+        }
+
+        private boolean assertNodePresent() {
+            clientConnections.compute(nodeId, (id, conns) -> {
+                assert conns != null : "number of connections for " + id + " is null, but should be an integer";
+                assert conns >= 1 : "number of connections for " + id + " should be >= 1 but was " + conns;
+                return conns;
+            });
+            // Always return true, there is additional asserting here, the boolean is just so this
+            // can be skipped when assertions are not enabled
+            return true;
+        }
+    }
+
+    /**
+     * A handler that counts connections
+     *
+     * @opensearch.internal
+     */
+    final class ProtobufConnectionCountingHandler<Response extends TransportResponse> extends ProtobufActionListenerResponseHandler<Response> {
+        private final Map<String, Long> clientConnections;
+        private final String nodeId;
+
+        ProtobufConnectionCountingHandler(
+            final ActionListener<? super Response> listener,
+            final ProtobufWriteable.Reader<Response> responseReader,
             final Map<String, Long> clientConnections,
             final String nodeId
         ) {

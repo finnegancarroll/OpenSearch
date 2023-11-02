@@ -32,14 +32,21 @@
 package org.opensearch.transport;
 
 import org.opensearch.cluster.node.DiscoveryNode;
+import org.opensearch.common.io.stream.BytesStreamOutput;
+import org.opensearch.core.common.io.stream.BytesStreamInput;
+import org.opensearch.core.common.io.stream.ProtobufWriteable;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.common.io.stream.Writeable;
+import org.opensearch.core.common.transport.TransportAddress;
 import org.opensearch.core.transport.TransportResponse;
+import org.opensearch.server.proto.ClusterStateResponseProto;
+import org.opensearch.tasks.ProtobufTask;
 import org.opensearch.tasks.Task;
 import org.opensearch.threadpool.ThreadPool;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.function.Function;
 
@@ -84,6 +91,40 @@ public final class TransportActionProxy {
                 action,
                 wrappedRequest,
                 new ProxyResponseHandler<>(channel, responseFunction.apply(wrappedRequest))
+            );
+        }
+    }
+
+    /**
+     * Handler for proxy requests
+     *
+     * @opensearch.internal
+     */
+    private static class ProtobufProxyRequestHandler<T extends ProxyRequest> implements ProtobufTransportRequestHandler<T> {
+
+        private final TransportService service;
+        private final String action;
+        private final Function<TransportRequest, ProtobufWriteable.Reader<? extends TransportResponse>> responseFunction;
+
+        ProtobufProxyRequestHandler(
+            TransportService service,
+            String action,
+            Function<TransportRequest, ProtobufWriteable.Reader<? extends TransportResponse>> responseFunction
+        ) {
+            this.service = service;
+            this.action = action;
+            this.responseFunction = responseFunction;
+        }
+
+        @Override
+        public void messageReceived(T request, TransportChannel channel, ProtobufTask task) throws Exception {
+            DiscoveryNode targetNode = request.targetNode;
+            TransportRequest wrappedRequest = request.wrapped;
+            service.sendRequest(
+                targetNode,
+                action,
+                wrappedRequest,
+                new ProtobufProxyResponseHandler<>(channel, responseFunction.apply(wrappedRequest))
             );
         }
     }
@@ -139,6 +180,56 @@ public final class TransportActionProxy {
     }
 
     /**
+     * Handler for the proxy response
+     *
+     * @opensearch.internal
+     */
+    private static class ProtobufProxyResponseHandler<T extends TransportResponse> implements TransportResponseHandler<T> {
+
+        private final ProtobufWriteable.Reader<T> reader;
+        private final TransportChannel channel;
+
+        ProtobufProxyResponseHandler(TransportChannel channel, ProtobufWriteable.Reader<T> reader) {
+            this.reader = reader;
+            this.channel = channel;
+        }
+
+        @Override
+        public T read(StreamInput in) throws IOException {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException("Unimplemented method 'read'");
+        }
+
+        @Override
+        public void handleResponse(T response) {
+            try {
+                channel.sendResponse(response);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @Override
+        public void handleException(TransportException exp) {
+            try {
+                channel.sendResponse(exp);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @Override
+        public String executor() {
+            return ThreadPool.Names.SAME;
+        }
+
+        @Override
+        public T read(byte[] in) throws IOException {
+            return reader.read(in);
+        }
+    }
+
+    /**
      * The proxy request
      *
      * @opensearch.internal
@@ -158,10 +249,16 @@ public final class TransportActionProxy {
             wrapped = reader.read(in);
         }
 
+        ProxyRequest(byte[] in, ProtobufWriteable.Reader<T> reader) throws IOException {
+            super(in);
+            targetNode = new DiscoveryNode(new BytesStreamInput(in));
+            wrapped = reader.read(in);
+        }
+
         @Override
-        public void writeTo(StreamOutput out) throws IOException {
+        public void writeTo(OutputStream out) throws IOException {
             super.writeTo(out);
-            targetNode.writeTo(out);
+            targetNode.writeTo(new BytesStreamOutput());
             wrapped.writeTo(out);
         }
     }
@@ -188,6 +285,26 @@ public final class TransportActionProxy {
 
     /**
      * Registers a proxy request handler that allows to forward requests for the given action to another node. To be used when the
+     * response type changes based on the upcoming request (quite rare)
+     */
+    public static void registerProxyActionWithDynamicResponseTypeProtobuf(
+        TransportService service,
+        String action,
+        Function<TransportRequest, ProtobufWriteable.Reader<? extends TransportResponse>> responseFunction
+    ) {
+        ProtobufRequestHandlerRegistry<? extends TransportRequest> requestHandler = service.getRequestHandlerProtobuf(action);
+        service.registerRequestHandlerProtobuf(
+            getProxyAction(action),
+            ThreadPool.Names.SAME,
+            true,
+            false,
+            in -> new ProxyRequest<>(in, requestHandler::newRequest),
+            new ProtobufProxyRequestHandler<>(service, action, responseFunction)
+        );
+    }
+
+    /**
+     * Registers a proxy request handler that allows to forward requests for the given action to another node. To be used when the
      * response type is always the same (most of the cases).
      */
     public static void registerProxyAction(TransportService service, String action, Writeable.Reader<? extends TransportResponse> reader) {
@@ -199,6 +316,22 @@ public final class TransportActionProxy {
             false,
             in -> new ProxyRequest<>(in, requestHandler::newRequest),
             new ProxyRequestHandler<>(service, action, request -> reader)
+        );
+    }
+
+    /**
+     * Registers a proxy request handler that allows to forward requests for the given action to another node. To be used when the
+     * response type is always the same (most of the cases).
+     */
+    public static void registerProxyActionProtobuf(TransportService service, String action, ProtobufWriteable.Reader<? extends TransportResponse> reader) {
+        ProtobufRequestHandlerRegistry<? extends TransportRequest> requestHandler = service.getRequestHandlerProtobuf(action);
+        service.registerRequestHandlerProtobuf(
+            getProxyAction(action),
+            ThreadPool.Names.SAME,
+            true,
+            false,
+            in -> new ProxyRequest<>(in, requestHandler::newRequest),
+            new ProtobufProxyRequestHandler<>(service, action, request -> reader)
         );
     }
 

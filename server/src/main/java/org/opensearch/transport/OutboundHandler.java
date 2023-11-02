@@ -58,6 +58,7 @@ import org.opensearch.common.util.io.IOUtils;
 import org.opensearch.common.lease.Releasable;
 import org.opensearch.common.lease.Releasables;
 import org.opensearch.core.transport.TransportResponse;
+import org.opensearch.search.internal.ProtobufShardSearchRequest;
 import org.opensearch.threadpool.ThreadPool;
 
 import java.io.IOException;
@@ -133,7 +134,16 @@ final class OutboundHandler {
             isHandshake,
             compressRequest
         );
-
+        if (request.getClass().toString().contains("Search")) {
+            System.out.println("OutboundHandler sendRequest");
+            System.out.println("Node: " + node);
+            System.out.println("Channel: " + channel);
+            System.out.println("RequestId: " + requestId);
+            System.out.println("Action: " + action);
+            System.out.println("Request: " + request);
+            System.out.println("Options: " + options);
+            System.out.println("OutboundMessage: " + message);
+        }
         ActionListener<Void> listener = ActionListener.wrap(() -> messageListener.onRequestSent(node, requestId, action, request, options));
         String canonicalName = request.getClass().getCanonicalName();
         if (canonicalName.contains("ProtobufClusterState")) {
@@ -178,6 +188,20 @@ final class OutboundHandler {
                 action
             );
             sendProtobufMessage(channel, protobufMessage, listener);
+        } else if (canonicalName.contains("ProtobufShardSearch")){
+            ProtobufShardSearchRequest protobufShardSearchRequest = (ProtobufShardSearchRequest) request;
+            byte[] bytes = new byte[1];
+            bytes[0] = 0;
+            ProtobufOutboundMessage protobufMessage = new ProtobufOutboundMessage(
+                requestId,
+                bytes,
+                Version.CURRENT,
+                threadPool.getThreadContext(),
+                protobufClusterStateRequest.request(),
+                features,
+                action
+            );
+            sendProtobufMessage(channel, protobufMessage, listener);
         } else {
             sendMessage(channel, message, listener);
         }
@@ -209,6 +233,15 @@ final class OutboundHandler {
             isHandshake,
             compress
         );
+        if (response.getClass().toString().contains("Search")) {
+            System.out.println("OutboundHandler sendResponse");
+            System.out.println("NodeVersion: " + nodeVersion);
+            System.out.println("Features: " + features);
+            System.out.println("Channel: " + channel);
+            System.out.println("RequestId: " + requestId);
+            System.out.println("Action: " + action);
+            System.out.println("Response: " + response);
+        }
         ActionListener<Void> listener = ActionListener.wrap(() -> messageListener.onResponseSent(requestId, action, response));
         String canonicalName = response.getClass().getCanonicalName();
         if (canonicalName.contains("ProtobufClusterState")) {

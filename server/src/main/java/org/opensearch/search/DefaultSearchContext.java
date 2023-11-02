@@ -41,6 +41,7 @@ import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.Query;
 import org.opensearch.Version;
+import org.opensearch.action.search.ProtobufSearchShardTask;
 import org.opensearch.action.search.SearchShardTask;
 import org.opensearch.action.search.SearchType;
 import org.opensearch.cluster.service.ClusterService;
@@ -81,6 +82,7 @@ import org.opensearch.search.fetch.subphase.ScriptFieldsContext;
 import org.opensearch.search.fetch.subphase.highlight.SearchHighlightContext;
 import org.opensearch.search.internal.ContextIndexSearcher;
 import org.opensearch.search.internal.PitReaderContext;
+import org.opensearch.search.internal.ProtobufShardSearchRequest;
 import org.opensearch.search.internal.ReaderContext;
 import org.opensearch.search.internal.ScrollContext;
 import org.opensearch.search.internal.SearchContext;
@@ -118,6 +120,7 @@ final class DefaultSearchContext extends SearchContext {
     private final ReaderContext readerContext;
     private final Engine.Searcher engineSearcher;
     private final ShardSearchRequest request;
+    private final ProtobufShardSearchRequest protobufShardSearchRequest;
     private final SearchShardTarget shardTarget;
     private final LongSupplier relativeTimeSupplier;
     private SearchType searchType;
@@ -154,6 +157,7 @@ final class DefaultSearchContext extends SearchContext {
     // filter for sliced scroll
     private SliceBuilder sliceBuilder;
     private SearchShardTask task;
+    private ProtobufSearchShardTask protobufSearchShardTask;
     private final Version minNodeVersion;
 
     /**
@@ -201,6 +205,61 @@ final class DefaultSearchContext extends SearchContext {
     ) throws IOException {
         this.readerContext = readerContext;
         this.request = request;
+        this.protobufShardSearchRequest = null;
+        this.fetchPhase = fetchPhase;
+        this.searchType = request.searchType();
+        this.shardTarget = shardTarget;
+        // SearchContexts use a BigArrays that can circuit break
+        this.bigArrays = bigArrays.withCircuitBreaking();
+        this.dfsResult = new DfsSearchResult(readerContext.id(), shardTarget, request);
+        this.queryResult = new QuerySearchResult(readerContext.id(), shardTarget, request);
+        this.fetchResult = new FetchSearchResult(readerContext.id(), shardTarget);
+        this.indexService = readerContext.indexService();
+        this.indexShard = readerContext.indexShard();
+        this.clusterService = clusterService;
+        this.engineSearcher = readerContext.acquireSearcher("search");
+        this.searcher = new ContextIndexSearcher(
+            engineSearcher.getIndexReader(),
+            engineSearcher.getSimilarity(),
+            engineSearcher.getQueryCache(),
+            engineSearcher.getQueryCachingPolicy(),
+            lowLevelCancellation,
+            executor,
+            this
+        );
+        this.relativeTimeSupplier = relativeTimeSupplier;
+        this.timeout = timeout;
+        this.minNodeVersion = minNodeVersion;
+        queryShardContext = indexService.newQueryShardContext(
+            request.shardId().id(),
+            this.searcher,
+            request::nowInMillis,
+            shardTarget.getClusterAlias(),
+            validate
+        );
+        queryBoost = request.indexBoost();
+        this.lowLevelCancellation = lowLevelCancellation;
+        this.requestToAggReduceContextBuilder = requestToAggReduceContextBuilder;
+    }
+
+    DefaultSearchContext(
+        ReaderContext readerContext,
+        ProtobufShardSearchRequest request,
+        SearchShardTarget shardTarget,
+        ClusterService clusterService,
+        BigArrays bigArrays,
+        LongSupplier relativeTimeSupplier,
+        TimeValue timeout,
+        FetchPhase fetchPhase,
+        boolean lowLevelCancellation,
+        Version minNodeVersion,
+        boolean validate,
+        Executor executor,
+        Function<SearchSourceBuilder, InternalAggregation.ReduceContextBuilder> requestToAggReduceContextBuilder
+    ) throws IOException {
+        this.readerContext = readerContext;
+        this.request = null;
+        this.protobufShardSearchRequest = request;
         this.fetchPhase = fetchPhase;
         this.searchType = request.searchType();
         this.shardTarget = shardTarget;
@@ -899,6 +958,10 @@ final class DefaultSearchContext extends SearchContext {
     @Override
     public void setTask(SearchShardTask task) {
         this.task = task;
+    }
+
+    public void setProtobufTask(ProtobufSearchShardTask task) {
+        this.protobufSearchShardTask = task;
     }
 
     @Override

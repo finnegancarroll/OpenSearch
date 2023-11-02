@@ -65,6 +65,7 @@ import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
 import org.opensearch.core.transport.TransportResponse;
 import org.opensearch.node.NodeClosedException;
 import org.opensearch.node.ReportingService;
+import org.opensearch.tasks.ProtobufTask;
 import org.opensearch.tasks.Task;
 import org.opensearch.tasks.TaskManager;
 import org.opensearch.threadpool.Scheduler;
@@ -971,6 +972,28 @@ public class TransportService extends AbstractLifecycleComponent
         final String action,
         final TransportRequest request,
         final Task parentTask,
+        final TransportRequestOptions options,
+        final TransportResponseHandler<T> handler
+    ) {
+        request.setParentTask(localNode.getId(), parentTask.getId());
+        sendRequest(connection, action, request, options, handler);
+    }
+
+    public <T extends TransportResponse> void sendChildRequestProtobuf(
+        final Transport.Connection connection,
+        final String action,
+        final TransportRequest request,
+        final ProtobufTask parentTask,
+        final TransportResponseHandler<T> handler
+    ) {
+        sendChildRequestProtobuf(connection, action, request, parentTask, TransportRequestOptions.EMPTY, handler);
+    }
+
+    public <T extends TransportResponse> void sendChildRequestProtobuf(
+        final Transport.Connection connection,
+        final String action,
+        final TransportRequest request,
+        final ProtobufTask parentTask,
         final TransportRequestOptions options,
         final TransportResponseHandler<T> handler
     ) {

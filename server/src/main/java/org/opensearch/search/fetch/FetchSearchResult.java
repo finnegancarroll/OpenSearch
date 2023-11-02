@@ -50,6 +50,7 @@ import java.io.IOException;
  */
 public final class FetchSearchResult extends SearchPhaseResult {
 
+    // TODO: proto message
     private SearchHits hits;
     // client side counter
     private transient int counter;
@@ -60,6 +61,12 @@ public final class FetchSearchResult extends SearchPhaseResult {
         super(in);
         contextId = new ShardSearchContextId(in);
         hits = new SearchHits(in);
+    }
+
+    public FetchSearchResult(byte[] in) throws IOException {
+        super(in);
+        contextId = null;
+        hits = null;
     }
 
     public FetchSearchResult(ShardSearchContextId id, SearchShardTarget shardTarget) {

@@ -72,6 +72,7 @@ public abstract class ProtobufTransportAction<Request extends ProtobufActionRequ
 
         try {
             task = taskManager.registerProtobuf("transport", actionName, request);
+            System.out.println("Protobuf task registered from execute is " + task);
         } catch (TaskCancelledException e) {
             unregisterChildNode.close();
             throw e;
