@@ -225,11 +225,19 @@ public class ProtobufShardSearchRequest extends TransportRequest implements Indi
         // oos.flush();
         // byte [] data = bos.toByteArray();
         // ByteString byteString = ByteString.copyFromUtf8(shardId);
-        ShardSearchRequestProto.ShardSearchRequest.OriginalIndices originalIndices2 = ShardSearchRequestProto.ShardSearchRequest.OriginalIndices.newBuilder()
+        // ShardSearchRequestProto.ShardSearchRequest.OriginalIndices.IndicesOptions indicesOptionsProto = 
+        //         ShardSearchRequestProto.ShardSearchRequest.OriginalIndices.IndicesOptions.
+        // if (originalIndices.indicesOptions().allowAliasesToMultipleIndices()) {
+
+        }
+        
+        ShardSearchRequestProto.ShardSearchRequest.OriginalIndices originalIndicesProto = ShardSearchRequestProto.ShardSearchRequest.OriginalIndices.newBuilder()
                         .addAllIndices(Arrays.stream(originalIndices.indices()).collect(Collectors.toList()))
-                        .setIndicesOptions(originalIndices.indicesOptions()).build();
+                        .setIndicesOptions().build();
+
+
         this.shardSearchRequestProto = ShardSearchRequestProto.ShardSearchRequest.newBuilder()
-                                .setOriginalIndices(ShardSearchRequestProto.ShardSearchRequest.OriginalIndices.newBuilder().addAllIndices(originalIndices.indices()).setIndicesOptions(originalIndices.).build();
+                                .setOriginalIndices(originalIndicesProto).build();
 
 
         // this.shardSearchRequestProto = ShardSearchRequestProto.ShardSearchRequest.newBuilder().setShardId(shardId)

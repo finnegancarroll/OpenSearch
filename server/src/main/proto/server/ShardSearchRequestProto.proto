@@ -1,0 +1,63 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
+ *
+ * Modifications Copyright OpenSearch Contributors. See
+ * GitHub history for details.
+ */
+
+syntax = "proto3";
+package org.opensearch.server.proto;
+
+option java_outer_classname = "ShardSearchRequestProto";
+
+message ShardSearchRequest {
+  OriginalIndices originalIndices = 1;
+  ShardId shardId = 2;
+  int32 numberOfShards = 3;
+  SearchType searchType = 4;
+  bytes source = 5;
+  bool requestCache = 6;
+  bytes aliasFilter = 7;
+  float indexBoost = 8;
+  bool allowPartialSearchResults = 9;
+  repeated string indexRoutings = 10;
+  string preference = 11;
+  bytes scroll = 12;
+  int64 nowInMillis = 13;
+  optional string clusterAlias = 14;
+  bytes readerId = 15;
+  string timeValue = 16;
+
+  message OriginalIndices {
+    repeated string indices = 1;
+    IndicesOptions indicesOptions = 2;
+
+    enum IndicesOptions {
+      IGNORE_UNAVAILABLE = 0;
+      ALLOW_NO_INDICES = 1;
+      EXPAND_WILDCARDS_OPEN = 2;
+      EXPAND_WILDCARDS_CLOSED = 3;
+      EXPAND_WILDCARDS_HIDDEN = 4;
+      ALLOW_ALIASES_TO_MULTIPLE_INDICES = 5;
+      FORBID_CLOSED_INDICES = 6;
+      IGNORE_ALIASES = 7;
+      IGNORE_THROTTLED = 8;
+    }
+  }
+
+  message ShardId {
+    int32 shardId = 1;
+    int32 hashCode = 2;
+    string indexName = 3;
+    string indexUUID = 4;
+  }
+
+  enum SearchType {
+    QUERY_THEN_FETCH = 0;
+    DFS_QUERY_THEN_FETCH = 1;
+  }
+}
