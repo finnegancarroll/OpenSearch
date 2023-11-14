@@ -52,6 +52,7 @@ import org.opensearch.search.fetch.subphase.highlight.HighlightBuilder.BoundaryS
 import org.opensearch.search.fetch.subphase.highlight.HighlightBuilder.Order;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
@@ -71,7 +72,8 @@ public abstract class AbstractHighlighterBuilder<HB extends AbstractHighlighterB
     implements
         Writeable,
         Rewriteable<HB>,
-        ToXContentObject {
+        ToXContentObject,
+        Serializable {
     public static final ParseField PRE_TAGS_FIELD = new ParseField("pre_tags");
     public static final ParseField POST_TAGS_FIELD = new ParseField("post_tags");
     public static final ParseField FIELDS_FIELD = new ParseField("fields");

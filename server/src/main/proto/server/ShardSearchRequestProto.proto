@@ -29,23 +29,26 @@ message ShardSearchRequest {
   bytes scroll = 12;
   int64 nowInMillis = 13;
   optional string clusterAlias = 14;
-  bytes readerId = 15;
-  string timeValue = 16;
+  optional ShardSearchContextId readerId = 15;
+  optional string timeValue = 16;
+  int64 inboundNetworkTime = 17;
+  int64 outboundNetworkTime = 18;
+  bool canReturnNullResponseIfMatchNoDocs = 19;
 
   message OriginalIndices {
     repeated string indices = 1;
     IndicesOptions indicesOptions = 2;
 
-    enum IndicesOptions {
-      IGNORE_UNAVAILABLE = 0;
-      ALLOW_NO_INDICES = 1;
-      EXPAND_WILDCARDS_OPEN = 2;
-      EXPAND_WILDCARDS_CLOSED = 3;
-      EXPAND_WILDCARDS_HIDDEN = 4;
-      ALLOW_ALIASES_TO_MULTIPLE_INDICES = 5;
-      FORBID_CLOSED_INDICES = 6;
-      IGNORE_ALIASES = 7;
-      IGNORE_THROTTLED = 8;
+    message IndicesOptions {
+      bool ignoreUnavailable = 1;
+      bool allowNoIndices = 2;
+      bool expandWildcardsOpen = 3;
+      bool expandWildcardsClosed = 4;
+      bool expandWildcardsHidden = 5;
+      bool allowAliasesToMultipleIndices = 6;
+      bool forbidClosedIndices = 7;
+      bool ignoreAliases = 8;
+      bool ignoreThrottled = 9;
     }
   }
 
@@ -59,5 +62,10 @@ message ShardSearchRequest {
   enum SearchType {
     QUERY_THEN_FETCH = 0;
     DFS_QUERY_THEN_FETCH = 1;
+  }
+
+  message ShardSearchContextId {
+    string sessionId = 1;
+    int64 id = 2;
   }
 }

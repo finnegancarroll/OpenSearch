@@ -44,6 +44,7 @@ import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -52,7 +53,7 @@ import java.util.Objects;
  *
  * @opensearch.internal
  */
-public final class FieldAndFormat implements Writeable, ToXContentObject {
+public final class FieldAndFormat implements Writeable, ToXContentObject, Serializable {
     private static final ParseField FIELD_FIELD = new ParseField("field");
     private static final ParseField FORMAT_FIELD = new ParseField("format");
 

@@ -25,6 +25,7 @@ import org.opensearch.server.proto.NodesInfoProto.NodesInfo;
 import org.opensearch.server.proto.NodesInfoRequestProto.NodesInfoRequest;
 import org.opensearch.server.proto.NodesStatsProto.NodesStats;
 import org.opensearch.server.proto.NodesStatsRequestProto.NodesStatsRequest;
+import org.opensearch.server.proto.ShardSearchRequestProto.ShardSearchRequest;
 import org.opensearch.server.proto.MessageProto.OutboundInboundMessage;
 import org.opensearch.server.proto.MessageProto.OutboundInboundMessage.Header;
 import org.opensearch.server.proto.MessageProto.OutboundInboundMessage.ResponseHandlersList;
@@ -270,6 +271,45 @@ public class ProtobufOutboundMessage {
             .setNodesStatsResponse(nodesStatsRes)
             .setAction(action)
             .addAllFeatures(features)
+            .setIsProtobuf(true)
+            .build();
+
+    }
+
+     public ProtobufOutboundMessage(
+        long requestId,
+        byte[] status,
+        Version version,
+        ThreadContext threadContext,
+        ShardSearchRequest shardSearchReq,
+        String[] features,
+        String action
+    ) {
+        Header header = Header.newBuilder()
+            .addAllPrefix(Arrays.asList(ByteString.copyFrom(PREFIX)))
+            .setRequestId(requestId)
+            .setStatus(ByteString.copyFrom(status))
+            .setVersionId(version.id)
+            .build();
+        Map<String, String> requestHeaders = threadContext.getHeaders();
+        Map<String, List<String>> responseHeaders = threadContext.getResponseHeaders();
+        Map<String, ResponseHandlersList> responseHandlers = new HashMap<>();
+        for (Map.Entry<String, List<String>> entry : responseHeaders.entrySet()) {
+            String key = entry.getKey();
+            List<String> value = entry.getValue();
+            ResponseHandlersList responseHandlersList = ResponseHandlersList.newBuilder().addAllSetOfResponseHandlers(value).build();
+            responseHandlers.put(key, responseHandlersList);
+        }
+        this.message = OutboundInboundMessage.newBuilder()
+            .setHeader(header)
+            .putAllRequestHeaders(requestHeaders)
+            .putAllResponseHandlers(responseHandlers)
+            .setVersion(version.toString())
+            .setStatus(ByteString.copyFrom(status))
+            .setRequestId(requestId)
+            .setShardSearchRequest(shardSearchReq)
+            .setAction(action)
+            .addAllFeatures(Arrays.asList(features))
             .setIsProtobuf(true)
             .build();
 

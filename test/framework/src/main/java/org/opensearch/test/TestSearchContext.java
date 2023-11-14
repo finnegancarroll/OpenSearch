@@ -36,6 +36,7 @@ import org.apache.lucene.search.CollectorManager;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.Query;
 import org.opensearch.action.OriginalIndices;
+import org.opensearch.action.search.ProtobufSearchShardTask;
 import org.opensearch.action.search.SearchShardTask;
 import org.opensearch.action.search.SearchType;
 import org.opensearch.common.unit.TimeValue;
@@ -66,6 +67,7 @@ import org.opensearch.search.fetch.subphase.FetchSourceContext;
 import org.opensearch.search.fetch.subphase.ScriptFieldsContext;
 import org.opensearch.search.fetch.subphase.highlight.SearchHighlightContext;
 import org.opensearch.search.internal.ContextIndexSearcher;
+import org.opensearch.search.internal.ProtobufShardSearchRequest;
 import org.opensearch.search.internal.ReaderContext;
 import org.opensearch.search.internal.ScrollContext;
 import org.opensearch.search.internal.SearchContext;
@@ -103,6 +105,7 @@ public class TestSearchContext extends SearchContext {
     Query query;
     Float minScore;
     SearchShardTask task;
+    ProtobufSearchShardTask protobufTask;
     SortAndFormats sort;
     boolean trackScores = false;
     int trackTotalHitsUpTo = SearchContext.DEFAULT_TRACK_TOTAL_HITS_UP_TO;
@@ -188,6 +191,11 @@ public class TestSearchContext extends SearchContext {
 
     @Override
     public ShardSearchRequest request() {
+        return null;
+    }
+
+    @Override
+    public ProtobufShardSearchRequest protobufShardSearchRequest() {
         return null;
     }
 
@@ -642,6 +650,11 @@ public class TestSearchContext extends SearchContext {
     @Override
     public SearchShardTask getTask() {
         return task;
+    }
+
+    @Override
+    public ProtobufSearchShardTask getProtobufTask() {
+        return protobufTask;
     }
 
     @Override

@@ -8,12 +8,10 @@
 
 package org.opensearch.search.internal;
 
-import org.opensearch.Version;
 import org.opensearch.action.IndicesRequest;
 import org.opensearch.action.OriginalIndices;
 import org.opensearch.action.search.ProtobufSearchShardTask;
 import org.opensearch.action.search.ProtobufSearchRequest;
-import org.opensearch.action.search.SearchShardTask;
 import org.opensearch.action.search.SearchType;
 import org.opensearch.action.support.IndicesOptions;
 import org.opensearch.cluster.metadata.AliasMetadata;
@@ -22,8 +20,6 @@ import org.opensearch.common.CheckedFunction;
 import org.opensearch.common.Nullable;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.common.io.stream.BytesStreamOutput;
-import org.opensearch.core.common.io.stream.StreamInput;
-import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.core.common.Strings;
 import org.opensearch.core.xcontent.ToXContent;
@@ -38,23 +34,24 @@ import org.opensearch.core.index.shard.ShardId;
 import org.opensearch.indices.AliasFilterParsingException;
 import org.opensearch.indices.InvalidAliasNameException;
 import org.opensearch.search.Scroll;
-import org.opensearch.search.SearchSortValuesAndFormats;
 import org.opensearch.search.builder.SearchSourceBuilder;
 import org.opensearch.search.query.QuerySearchResult;
 import org.opensearch.search.sort.FieldSortBuilder;
 import org.opensearch.server.proto.ShardSearchRequestProto;
 import org.opensearch.tasks.ProtobufTask;
-import org.opensearch.tasks.Task;
 import org.opensearch.tasks.ProtobufTaskId;
 import org.opensearch.transport.TransportRequest;
 
 import com.google.protobuf.ByteString;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
@@ -74,29 +71,29 @@ public class ProtobufShardSearchRequest extends TransportRequest implements Indi
     public static final ToXContent.Params FORMAT_PARAMS = new ToXContent.MapParams(Collections.singletonMap("pretty", "false"));
 
     private ShardSearchRequestProto.ShardSearchRequest shardSearchRequestProto;
-    private final String clusterAlias;
-    private final ShardId shardId;
-    private final int numberOfShards;
-    private final SearchType searchType;
-    private final Scroll scroll;
-    private final float indexBoost;
-    private final Boolean requestCache;
-    private final long nowInMillis;
-    private long inboundNetworkTime;
-    private long outboundNetworkTime;
-    private final boolean allowPartialSearchResults;
-    private final String[] indexRoutings;
-    private final String preference;
-    private final OriginalIndices originalIndices;
+    // private final String clusterAlias;
+    // private final ShardId shardId;
+    // private final int numberOfShards;
+    // private final SearchType searchType;
+    // private final Scroll scroll;
+    // private final float indexBoost;
+    // private final Boolean requestCache;
+    // private final long nowInMillis;
+    // private long inboundNetworkTime;
+    // private long outboundNetworkTime;
+    // private final boolean allowPartialSearchResults;
+    // private final String[] indexRoutings;
+    // private final String preference;
+    // private final OriginalIndices originalIndices;
 
-    private boolean canReturnNullResponseIfMatchNoDocs;
-    private SearchSortValuesAndFormats bottomSortValues;
+    // private boolean canReturnNullResponseIfMatchNoDocs;
+    // private SearchSortValuesAndFormats bottomSortValues;
 
     // these are the only mutable fields, as they are subject to rewriting
-    private AliasFilter aliasFilter;
-    private SearchSourceBuilder source;
-    private final ShardSearchContextId readerId;
-    private final TimeValue keepAlive;
+    // private AliasFilter aliasFilter;
+    // private SearchSourceBuilder source;
+    // private final ShardSearchContextId readerId;
+    // private final TimeValue keepAlive;
 
     public ProtobufShardSearchRequest(
         OriginalIndices originalIndices,
@@ -190,7 +187,7 @@ public class ProtobufShardSearchRequest extends TransportRequest implements Indi
         Boolean requestCache,
         AliasFilter aliasFilter,
         float indexBoost,
-        boolean allowPartialSearchResults,
+        Boolean allowPartialSearchResults,
         String[] indexRoutings,
         String preference,
         Scroll scroll,
@@ -199,253 +196,298 @@ public class ProtobufShardSearchRequest extends TransportRequest implements Indi
         ShardSearchContextId readerId,
         TimeValue keepAlive
     ) {
-        this.shardId = shardId;
-        this.numberOfShards = numberOfShards;
-        this.searchType = searchType;
-        this.source = source;
-        this.requestCache = requestCache;
-        this.aliasFilter = aliasFilter;
-        this.indexBoost = indexBoost;
-        this.allowPartialSearchResults = allowPartialSearchResults;
-        this.indexRoutings = indexRoutings;
-        this.preference = preference;
-        this.scroll = scroll;
-        this.nowInMillis = nowInMillis;
-        this.inboundNetworkTime = 0;
-        this.outboundNetworkTime = 0;
-        this.clusterAlias = clusterAlias;
-        this.originalIndices = originalIndices;
-        this.readerId = readerId;
-        this.keepAlive = keepAlive;
-        assert keepAlive == null || readerId != null : "readerId: " + readerId + " keepAlive: " + keepAlive;
-        // convert shardId to bytes
-        // ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        // ObjectOutputStream oos = new ObjectOutputStream(bos);
-        // oos.writeObject(shardId);
-        // oos.flush();
-        // byte [] data = bos.toByteArray();
-        // ByteString byteString = ByteString.copyFromUtf8(shardId);
-        // ShardSearchRequestProto.ShardSearchRequest.OriginalIndices.IndicesOptions indicesOptionsProto = 
-        //         ShardSearchRequestProto.ShardSearchRequest.OriginalIndices.IndicesOptions.
-        // if (originalIndices.indicesOptions().allowAliasesToMultipleIndices()) {
-
-        }
+        // this.shardId = shardId;
+        // this.numberOfShards = numberOfShards;
+        // this.searchType = searchType;
+        // this.source = source;
+        // this.requestCache = requestCache;
+        // this.aliasFilter = aliasFilter;
+        // this.indexBoost = indexBoost;
+        // this.allowPartialSearchResults = allowPartialSearchResults;
+        // this.indexRoutings = indexRoutings;
+        // this.preference = preference;
+        // this.scroll = scroll;
+        // this.nowInMillis = nowInMillis;
+        // this.inboundNetworkTime = 0;
+        // this.outboundNetworkTime = 0;
+        // this.clusterAlias = clusterAlias;
+        // this.originalIndices = originalIndices;
+        // this.readerId = readerId;
+        // this.keepAlive = keepAlive;
+        // assert keepAlive == null || readerId != null : "readerId: " + readerId + " keepAlive: " + keepAlive;
         
         ShardSearchRequestProto.ShardSearchRequest.OriginalIndices originalIndicesProto = ShardSearchRequestProto.ShardSearchRequest.OriginalIndices.newBuilder()
                         .addAllIndices(Arrays.stream(originalIndices.indices()).collect(Collectors.toList()))
-                        .setIndicesOptions().build();
+                        .setIndicesOptions(ShardSearchRequestProto.ShardSearchRequest.OriginalIndices.IndicesOptions.newBuilder()
+                                                .setIgnoreUnavailable(originalIndices.indicesOptions().ignoreUnavailable())
+                                                .setAllowNoIndices(originalIndices.indicesOptions().allowNoIndices())
+                                                .setExpandWildcardsOpen(originalIndices.indicesOptions().expandWildcardsOpen())
+                                                .setExpandWildcardsClosed(originalIndices.indicesOptions().expandWildcardsClosed())
+                                                .setExpandWildcardsHidden(originalIndices.indicesOptions().allowAliasesToMultipleIndices())
+                                                .setAllowAliasesToMultipleIndices(originalIndices.indicesOptions().allowAliasesToMultipleIndices())
+                                                .setForbidClosedIndices(originalIndices.indicesOptions().forbidClosedIndices())
+                                                .setIgnoreAliases(originalIndices.indicesOptions().ignoreAliases())
+                                                .setIgnoreThrottled(originalIndices.indicesOptions().ignoreThrottled())
+                                                .build())
+                        .build();
+        ShardSearchRequestProto.ShardSearchRequest.ShardId shardIdProto = ShardSearchRequestProto.ShardSearchRequest.ShardId.newBuilder()
+                        .setShardId(shardId.getId())
+                        .setHashCode(shardId.hashCode())
+                        .setIndexName(shardId.getIndexName())
+                        .setIndexUUID(shardId.getIndex().getUUID())
+                        .build();
+        
+        ShardSearchRequestProto.ShardSearchRequest.ShardSearchContextId.Builder shardSearchContextId = ShardSearchRequestProto.ShardSearchRequest.ShardSearchContextId.newBuilder();
+        System.out.println("Reader id:  " + readerId);
+        if (readerId != null) {
+            shardSearchContextId.setSessionId(readerId.getSessionId());
+            shardSearchContextId.setId(readerId.getId());
+        }
 
+        ShardSearchRequestProto.ShardSearchRequest.Builder builder = ShardSearchRequestProto.ShardSearchRequest.newBuilder();
+        builder.setOriginalIndices(originalIndicesProto);
+        builder.setShardId(shardIdProto);
+        builder.setNumberOfShards(numberOfShards);
+        builder.setSearchType(ShardSearchRequestProto.ShardSearchRequest.SearchType.QUERY_THEN_FETCH);
+        builder.setSource(ByteString.copyFrom(convertToBytes(source)));
+        builder.setInboundNetworkTime(0);
+        builder.setOutboundNetworkTime(0);
 
-        this.shardSearchRequestProto = ShardSearchRequestProto.ShardSearchRequest.newBuilder()
-                                .setOriginalIndices(originalIndicesProto).build();
+        if (requestCache != null) {
+            builder.setRequestCache(requestCache);
+        }
 
+        if (aliasFilter != null) {
+            builder.setAliasFilter(ByteString.copyFrom(convertToBytes(aliasFilter)));
+        }
+        builder.setIndexBoost(indexBoost);
 
-        // this.shardSearchRequestProto = ShardSearchRequestProto.ShardSearchRequest.newBuilder().setShardId(shardId)
+        if (allowPartialSearchResults != null) {
+            builder.setAllowPartialSearchResults(allowPartialSearchResults);
+        }
+
+        if (indexRoutings != null) {
+            builder.addAllIndexRoutings(Arrays.stream(indexRoutings).collect(Collectors.toList()));
+        }
+
+        if (preference != null) {
+            builder.setPreference(preference);
+        }
+
+        if (scroll != null) {
+            builder.setScroll(ByteString.copyFrom(convertToBytes(scroll)));
+        }
+        builder.setNowInMillis(nowInMillis);
+
+        if (clusterAlias != null) {
+            builder.setClusterAlias(clusterAlias);
+        }
+        if (readerId != null) {
+            builder.setReaderId(shardSearchContextId.build());
+        }
+        
+        System.out.println("Keep alive: " + keepAlive);
+        if (keepAlive != null) {
+            builder.setTimeValue(keepAlive.getStringRep());
+        }
+
+        this.shardSearchRequestProto = builder.build();
     }
 
     public ProtobufShardSearchRequest(byte[] in) throws IOException {
         super(in);
-        shardId = null;
-        searchType = null;
-        numberOfShards = 0;
-        scroll = null;
-        source = null;
-        // if (in.getVersion().before(Version.V_2_0_0)) {
-        //     // types no longer relevant so ignore
-        //     String[] types = in.readStringArray();
-        //     if (types.length > 0) {
-        //         throw new IllegalStateException("types are no longer supported in ids query but found [" + Arrays.toString(types) + "]");
-        //     }
-        // }
-        aliasFilter = null;
-        indexBoost = 0;
-        nowInMillis = 0;
-        requestCache = false;
-        // if (in.getVersion().onOrAfter(Version.V_2_0_0)) {
-        //     inboundNetworkTime = in.readVLong();
-        //     outboundNetworkTime = in.readVLong();
-        // }
-        clusterAlias = "";
-        allowPartialSearchResults = false;
-        indexRoutings = null;
-        preference = "";
-        canReturnNullResponseIfMatchNoDocs = false;
-        bottomSortValues = null;
-        readerId = null;
-        keepAlive = null;
-        originalIndices = null;
-        assert keepAlive == null || readerId != null : "readerId: " + readerId + " keepAlive: " + keepAlive;
+        this.shardSearchRequestProto = ShardSearchRequestProto.ShardSearchRequest.parseFrom(in);
+    }
+
+    public ProtobufShardSearchRequest(ShardSearchRequestProto.ShardSearchRequest shardSearchRequest) {
+        this.shardSearchRequestProto = shardSearchRequest;
     }
 
     public ProtobufShardSearchRequest(ProtobufShardSearchRequest clone) {
-        this.shardId = clone.shardId;
-        this.searchType = clone.searchType;
-        this.numberOfShards = clone.numberOfShards;
-        this.scroll = clone.scroll;
-        this.source = clone.source;
-        this.aliasFilter = clone.aliasFilter;
-        this.indexBoost = clone.indexBoost;
-        this.nowInMillis = clone.nowInMillis;
-        this.inboundNetworkTime = clone.inboundNetworkTime;
-        this.outboundNetworkTime = clone.outboundNetworkTime;
-        this.requestCache = clone.requestCache;
-        this.clusterAlias = clone.clusterAlias;
-        this.allowPartialSearchResults = clone.allowPartialSearchResults;
-        this.indexRoutings = clone.indexRoutings;
-        this.preference = clone.preference;
-        this.canReturnNullResponseIfMatchNoDocs = clone.canReturnNullResponseIfMatchNoDocs;
-        this.bottomSortValues = clone.bottomSortValues;
-        this.originalIndices = clone.originalIndices;
-        this.readerId = clone.readerId;
-        this.keepAlive = clone.keepAlive;
+        this.shardSearchRequestProto = clone.shardSearchRequestProto;
+    }
+
+    private byte[] convertToBytes(Object obj) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try {
+            ObjectOutputStream oos = new ObjectOutputStream(bos);
+            oos.writeObject(obj);
+            oos.flush();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return bos.toByteArray();
     }
 
     @Override
     public void writeTo(OutputStream out) throws IOException {
         super.writeTo(out);
-        // innerWriteTo(out, false);
-        // OriginalIndices.writeOriginalIndices(originalIndices, out);
+        out.write(this.shardSearchRequestProto.toByteArray());
     }
 
-    protected final void innerWriteTo(StreamOutput out, boolean asKey) throws IOException {
-        shardId.writeTo(out);
-        out.writeByte(searchType.id());
-        if (!asKey) {
-            out.writeVInt(numberOfShards);
-        }
-        out.writeOptionalWriteable(scroll);
-        out.writeOptionalWriteable(source);
-        if (out.getVersion().before(Version.V_2_0_0)) {
-            // types not supported so send an empty array to previous versions
-            out.writeStringArray(Strings.EMPTY_ARRAY);
-        }
-        aliasFilter.writeTo(out);
-        out.writeFloat(indexBoost);
-        if (asKey == false) {
-            out.writeVLong(nowInMillis);
-        }
-        out.writeOptionalBoolean(requestCache);
-        if (asKey == false && out.getVersion().onOrAfter(Version.V_2_0_0)) {
-            out.writeVLong(inboundNetworkTime);
-            out.writeVLong(outboundNetworkTime);
-        }
-        out.writeOptionalString(clusterAlias);
-        out.writeBoolean(allowPartialSearchResults);
-        if (asKey == false) {
-            out.writeStringArray(indexRoutings);
-            out.writeOptionalString(preference);
-        }
-        if (asKey == false) {
-            out.writeBoolean(canReturnNullResponseIfMatchNoDocs);
-            out.writeOptionalWriteable(bottomSortValues);
-        }
-        if (asKey == false) {
-            out.writeOptionalWriteable(readerId);
-            out.writeOptionalTimeValue(keepAlive);
-        }
-    }
+    // protected final void innerWriteTo(StreamOutput out, boolean asKey) throws IOException {
+    //     shardId.writeTo(out);
+    //     out.writeByte(searchType.id());
+    //     if (!asKey) {
+    //         out.writeVInt(numberOfShards);
+    //     }
+    //     out.writeOptionalWriteable(scroll);
+    //     out.writeOptionalWriteable(source);
+    //     if (out.getVersion().before(Version.V_2_0_0)) {
+    //         // types not supported so send an empty array to previous versions
+    //         out.writeStringArray(Strings.EMPTY_ARRAY);
+    //     }
+    //     aliasFilter.writeTo(out);
+    //     out.writeFloat(indexBoost);
+    //     if (asKey == false) {
+    //         out.writeVLong(nowInMillis);
+    //     }
+    //     out.writeOptionalBoolean(requestCache);
+    //     if (asKey == false && out.getVersion().onOrAfter(Version.V_2_0_0)) {
+    //         out.writeVLong(inboundNetworkTime);
+    //         out.writeVLong(outboundNetworkTime);
+    //     }
+    //     out.writeOptionalString(clusterAlias);
+    //     out.writeBoolean(allowPartialSearchResults);
+    //     if (asKey == false) {
+    //         out.writeStringArray(indexRoutings);
+    //         out.writeOptionalString(preference);
+    //     }
+    //     if (asKey == false) {
+    //         out.writeBoolean(canReturnNullResponseIfMatchNoDocs);
+    //         out.writeOptionalWriteable(bottomSortValues);
+    //     }
+    //     if (asKey == false) {
+    //         out.writeOptionalWriteable(readerId);
+    //         out.writeOptionalTimeValue(keepAlive);
+    //     }
+    // }
 
     @Override
     public String[] indices() {
-        if (originalIndices == null) {
+        if (this.shardSearchRequestProto.getOriginalIndices() == null) {
             return null;
         }
-        return originalIndices.indices();
+        return this.shardSearchRequestProto.getOriginalIndices().getIndicesList().toArray(new String[0]);
     }
 
     @Override
     public IndicesOptions indicesOptions() {
-        if (originalIndices == null) {
+        if (this.shardSearchRequestProto.getOriginalIndices() == null) {
             return null;
         }
-        return originalIndices.indicesOptions();
+        IndicesOptions indicesOptions = new IndicesOptions(EnumSet.of(IndicesOptions.Option.ALLOW_NO_INDICES, IndicesOptions.Option.FORBID_CLOSED_INDICES, IndicesOptions.Option.IGNORE_THROTTLED),
+            EnumSet.of(IndicesOptions.WildcardStates.OPEN));
+        return indicesOptions;
     }
 
     public ShardId shardId() {
-        return shardId;
+        return new ShardId(this.shardSearchRequestProto.getShardId().getIndexName(), this.shardSearchRequestProto.getShardId().getIndexUUID(), this.shardSearchRequestProto.getShardId().getShardId());
     }
 
     public SearchSourceBuilder source() {
-        return source;
+        ByteArrayInputStream in = new ByteArrayInputStream(this.shardSearchRequestProto.getSource().toByteArray());
+        try (ObjectInputStream is = new ObjectInputStream(in)) {
+            return (SearchSourceBuilder) is.readObject();
+        } catch (ClassNotFoundException | IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public AliasFilter getAliasFilter() {
-        return aliasFilter;
+        ByteArrayInputStream in = new ByteArrayInputStream(this.shardSearchRequestProto.getAliasFilter().toByteArray());
+        try (ObjectInputStream is = new ObjectInputStream(in)) {
+            return (AliasFilter) is.readObject();
+        } catch (ClassNotFoundException | IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public void setAliasFilter(AliasFilter aliasFilter) {
-        this.aliasFilter = aliasFilter;
+        this.shardSearchRequestProto.toBuilder().setAliasFilter(ByteString.copyFrom(convertToBytes(aliasFilter)));
     }
 
     public void source(SearchSourceBuilder source) {
-        this.source = source;
+        this.shardSearchRequestProto.toBuilder().setSource(ByteString.copyFrom(convertToBytes(source)));
     }
 
     public int numberOfShards() {
-        return numberOfShards;
+        return this.shardSearchRequestProto.getNumberOfShards();
     }
 
     public SearchType searchType() {
-        return searchType;
+        return SearchType.QUERY_THEN_FETCH;
     }
 
     public float indexBoost() {
-        return indexBoost;
+        return this.shardSearchRequestProto.getIndexBoost();
     }
 
     public long nowInMillis() {
-        return nowInMillis;
+        return this.shardSearchRequestProto.getNowInMillis();
     }
 
     public long getInboundNetworkTime() {
-        return inboundNetworkTime;
+        return this.shardSearchRequestProto.getInboundNetworkTime();
     }
 
     public void setInboundNetworkTime(long newTime) {
-        this.inboundNetworkTime = newTime;
+        this.shardSearchRequestProto.toBuilder().setInboundNetworkTime(newTime);
     }
 
     public long getOutboundNetworkTime() {
-        return outboundNetworkTime;
+        return this.shardSearchRequestProto.getOutboundNetworkTime();
     }
 
     public void setOutboundNetworkTime(long newTime) {
-        this.outboundNetworkTime = newTime;
+        this.shardSearchRequestProto.toBuilder().setOutboundNetworkTime(newTime);
     }
 
     public Boolean requestCache() {
-        return requestCache;
+        return this.shardSearchRequestProto.getRequestCache();
     }
 
     public boolean allowPartialSearchResults() {
-        return allowPartialSearchResults;
+        return this.shardSearchRequestProto.getAllowPartialSearchResults();
     }
 
     public Scroll scroll() {
-        return scroll;
+        ByteArrayInputStream in = new ByteArrayInputStream(this.shardSearchRequestProto.getScroll().toByteArray());
+        try (ObjectInputStream is = new ObjectInputStream(in)) {
+            return (Scroll) is.readObject();
+        } catch (ClassNotFoundException | IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public String[] indexRoutings() {
-        return indexRoutings;
+        return this.shardSearchRequestProto.getIndexRoutingsList().toArray(new String[0]);
     }
 
     public String preference() {
-        return preference;
+        return this.shardSearchRequestProto.getPreference();
     }
 
-    /**
-     * Sets the bottom sort values that can be used by the searcher to filter documents
-     * that are after it. This value is computed by coordinating nodes that throttles the
-     * query phase. After a partial merge of successful shards the sort values of the
-     * bottom top document are passed as an hint on subsequent shard requests.
-     */
-    public void setBottomSortValues(SearchSortValuesAndFormats values) {
-        this.bottomSortValues = values;
-    }
+    // /**
+    //  * Sets the bottom sort values that can be used by the searcher to filter documents
+    //  * that are after it. This value is computed by coordinating nodes that throttles the
+    //  * query phase. After a partial merge of successful shards the sort values of the
+    //  * bottom top document are passed as an hint on subsequent shard requests.
+    //  */
+    // public void setBottomSortValues(SearchSortValuesAndFormats values) {
+    //     this.bottomSortValues = values;
+    // }
 
-    public SearchSortValuesAndFormats getBottomSortValues() {
-        return bottomSortValues;
-    }
+    // public SearchSortValuesAndFormats getBottomSortValues() {
+    //     return bottomSortValues;
+    // }
 
     /**
      * Returns true if the caller can handle null response {@link QuerySearchResult#nullInstance()}.
@@ -453,11 +495,11 @@ public class ProtobufShardSearchRequest extends TransportRequest implements Indi
      * response.
      */
     public boolean canReturnNullResponseIfMatchNoDocs() {
-        return canReturnNullResponseIfMatchNoDocs;
+        return this.shardSearchRequestProto.getCanReturnNullResponseIfMatchNoDocs();
     }
 
     public void canReturnNullResponseIfMatchNoDocs(boolean value) {
-        this.canReturnNullResponseIfMatchNoDocs = value;
+        this.shardSearchRequestProto.toBuilder().setCanReturnNullResponseIfMatchNoDocs(value);
     }
 
     private static final ThreadLocal<BytesStreamOutput> scratch = ThreadLocal.withInitial(BytesStreamOutput::new);
@@ -467,32 +509,26 @@ public class ProtobufShardSearchRequest extends TransportRequest implements Indi
      * otherwise, using the most up to date point-in-time reader.
      */
     public ShardSearchContextId readerId() {
-        return readerId;
+        System.out.println("Getting readerId");
+        if (this.shardSearchRequestProto.hasReaderId() == false) {
+            System.out.println("Returning null since the readerId is null");
+            return null;
+        }
+        return new ShardSearchContextId(this.shardSearchRequestProto.getReaderId().getSessionId(), this.shardSearchRequestProto.getReaderId().getId());
     }
 
     /**
      * Returns a non-null to specify the time to live of the point-in-time reader that is used to execute this request.
      */
     public TimeValue keepAlive() {
-        return keepAlive;
-    }
-
-    /**
-     * Returns the cache key for this shard search request, based on its content
-     */
-    public BytesReference cacheKey() throws IOException {
-        BytesStreamOutput out = scratch.get();
-        try {
-            this.innerWriteTo(out, true);
-            // copy it over since we don't want to share the thread-local bytes in #scratch
-            return out.copyBytes();
-        } finally {
-            out.reset();
+        if (!this.shardSearchRequestProto.hasTimeValue()) {
+            return null;
         }
+        return TimeValue.parseTimeValue(this.shardSearchRequestProto.getTimeValue(), null, "keep_alive");
     }
 
     public String getClusterAlias() {
-        return clusterAlias;
+        return this.shardSearchRequestProto.getClusterAlias();
     }
 
     @Override
@@ -508,8 +544,15 @@ public class ProtobufShardSearchRequest extends TransportRequest implements Indi
 
     public String getMetadataSupplier() {
         StringBuilder sb = new StringBuilder();
-        if (source != null) {
-            sb.append("source[").append(source.toString(FORMAT_PARAMS)).append("]");
+        if (this.shardSearchRequestProto.getSource() != null) {
+            ByteArrayInputStream in = new ByteArrayInputStream(this.shardSearchRequestProto.getSource().toByteArray());
+            try (ObjectInputStream is = new ObjectInputStream(in)) {
+                SearchSourceBuilder source = (SearchSourceBuilder) is.readObject();
+                sb.append("source[").append(source.toString(FORMAT_PARAMS)).append("]");
+            } catch (ClassNotFoundException | IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         } else {
             sb.append("source[]");
         }
@@ -530,25 +573,33 @@ public class ProtobufShardSearchRequest extends TransportRequest implements Indi
 
         @Override
         public Rewriteable rewrite(QueryRewriteContext ctx) throws IOException {
-            SearchSourceBuilder newSource = request.source() == null ? null : Rewriteable.rewrite(request.source(), ctx);
-            AliasFilter newAliasFilter = Rewriteable.rewrite(request.getAliasFilter(), ctx);
+            // System.out.println("Rewriting protobuf request source");
+            // SearchSourceBuilder newSource = request.source() == null ? null : Rewriteable.rewrite(request.source(), ctx);
+            // System.out.println("Rewriting protobuf request source done");
+            // System.out.println("Rewriting protobuf request alias filter");
+            // AliasFilter newAliasFilter = Rewriteable.rewrite(request.getAliasFilter(), ctx);
+            // System.out.println("Rewriting protobuf request alias filter done");
+
+            SearchSourceBuilder newSource = request.source();
+            AliasFilter newAliasFilter = request.getAliasFilter();
 
             QueryShardContext shardContext = ctx.convertToShardContext();
 
             FieldSortBuilder primarySort = FieldSortBuilder.getPrimaryFieldSortOrNull(newSource);
             if (shardContext != null
                 && primarySort != null
-                && primarySort.isBottomSortShardDisjoint(shardContext, request.getBottomSortValues())) {
+                // && primarySort.isBottomSortShardDisjoint(shardContext, request.getBottomSortValues())
+                ) {
                 assert newSource != null : "source should contain a primary sort field";
                 newSource = newSource.shallowCopy();
-                int trackTotalHitsUpTo = ProtobufSearchRequest.resolveTrackTotalHitsUpTo(request.scroll, request.source);
+                int trackTotalHitsUpTo = ProtobufSearchRequest.resolveTrackTotalHitsUpTo(request.scroll(), request.source());
                 if (trackTotalHitsUpTo == TRACK_TOTAL_HITS_DISABLED && newSource.suggest() == null && newSource.aggregations() == null) {
                     newSource.query(new MatchNoneQueryBuilder());
                 } else {
                     newSource.size(0);
                 }
                 request.source(newSource);
-                request.setBottomSortValues(null);
+                // request.setBottomSortValues(null);
             }
 
             if (newSource == request.source() && newAliasFilter == request.getAliasFilter()) {
@@ -614,4 +665,9 @@ public class ProtobufShardSearchRequest extends TransportRequest implements Indi
             return combined;
         }
     }
+
+    public ShardSearchRequestProto.ShardSearchRequest request() {
+        return this.shardSearchRequestProto;
+    }
+    
 }

@@ -46,6 +46,7 @@ import org.opensearch.common.xcontent.support.XContentMapValues;
 import org.opensearch.rest.RestRequest;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -57,7 +58,7 @@ import java.util.function.Function;
  *
  * @opensearch.internal
  */
-public class FetchSourceContext implements Writeable, ToXContentObject {
+public class FetchSourceContext implements Writeable, ToXContentObject, Serializable {
 
     public static final ParseField INCLUDES_FIELD = new ParseField("includes", "include");
     public static final ParseField EXCLUDES_FIELD = new ParseField("excludes", "exclude");

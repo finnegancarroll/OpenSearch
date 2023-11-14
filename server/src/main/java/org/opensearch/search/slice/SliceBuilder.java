@@ -60,6 +60,7 @@ import org.opensearch.index.query.QueryShardContext;
 import org.opensearch.search.internal.ShardSearchRequest;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
@@ -78,7 +79,7 @@ import java.util.Set;
  *
  *  @opensearch.internal
  */
-public class SliceBuilder implements Writeable, ToXContentObject {
+public class SliceBuilder implements Writeable, ToXContentObject, Serializable {
 
     private static final DeprecationLogger DEPRECATION_LOG = DeprecationLogger.getLogger(SliceBuilder.class);
 

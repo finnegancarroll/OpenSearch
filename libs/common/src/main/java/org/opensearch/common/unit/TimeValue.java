@@ -32,6 +32,7 @@
 
 package org.opensearch.common.unit;
 
+import java.io.Serializable;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +42,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @opensearch.api
  */
-public class TimeValue implements Comparable<TimeValue> {
+public class TimeValue implements Comparable<TimeValue>, Serializable {
 
     /** How many nano-seconds in one milli-second */
     public static final long NSEC_PER_MSEC = TimeUnit.NANOSECONDS.convert(1, TimeUnit.MILLISECONDS);

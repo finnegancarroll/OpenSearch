@@ -18,6 +18,7 @@ import "server/NodesInfoRequestProto.proto";
 import "server/NodesInfoProto.proto";
 import "server/NodesStatsRequestProto.proto";
 import "server/NodesStatsProto.proto";
+import "server/ShardSearchRequestProto.proto";
 
 option java_outer_classname = "MessageProto";
 
@@ -37,8 +38,9 @@ message OutboundInboundMessage {
     NodesInfo nodesInfoResponse = 12;
     NodesStatsRequest nodesStatsRequest = 13;
     NodesStats nodesStatsResponse = 14;
+    ShardSearchRequest shardSearchRequest = 15;
   }
-  bool isProtobuf = 15;
+  bool isProtobuf = 16;
   
   message Header {
     repeated bytes prefix = 1;

@@ -46,6 +46,7 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHits;
+import org.opensearch.action.search.ProtobufSearchShardTask;
 import org.opensearch.action.search.SearchShardTask;
 import org.opensearch.common.Booleans;
 import org.opensearch.common.lucene.Lucene;
@@ -114,6 +115,27 @@ public class QueryPhase {
         if (context.lowLevelCancellation()) {
             cancellation = context.searcher().addQueryCancellation(() -> {
                 SearchShardTask task = context.getTask();
+                if (task != null && task.isCancelled()) {
+                    throw new TaskCancelledException("cancelled task with reason: " + task.getReasonCancelled());
+                }
+            });
+        } else {
+            cancellation = null;
+        }
+        try {
+            context.preProcess(true);
+        } finally {
+            if (cancellation != null) {
+                context.searcher().removeQueryCancellation(cancellation);
+            }
+        }
+    }
+
+    public void preProcessProtobuf(SearchContext context) {
+        final Runnable cancellation;
+        if (context.lowLevelCancellation()) {
+            cancellation = context.searcher().addQueryCancellation(() -> {
+                ProtobufSearchShardTask task = context.getProtobufTask();
                 if (task != null && task.isCancelled()) {
                     throw new TaskCancelledException("cancelled task with reason: " + task.getReasonCancelled());
                 }

@@ -37,13 +37,14 @@ import org.opensearch.core.common.io.stream.NamedWriteable;
 import org.opensearch.core.xcontent.ToXContentObject;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * Foundation class for all OpenSearch query builders
  *
  * @opensearch.internal
  */
-public interface QueryBuilder extends NamedWriteable, ToXContentObject, Rewriteable<QueryBuilder> {
+public interface QueryBuilder extends NamedWriteable, ToXContentObject, Rewriteable<QueryBuilder>, Serializable {
 
     /**
      * Converts this QueryBuilder to a lucene {@link Query}.

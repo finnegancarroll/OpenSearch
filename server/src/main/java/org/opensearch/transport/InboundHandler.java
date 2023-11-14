@@ -62,7 +62,9 @@ import org.opensearch.server.proto.NodesInfoRequestProto.NodesInfoRequest;
 import org.opensearch.server.proto.NodesStatsProto.NodesStats;
 import org.opensearch.server.proto.NodesStatsRequestProto.NodesStatsRequest;
 import org.opensearch.server.proto.MessageProto.OutboundInboundMessage;
+import org.opensearch.server.proto.ShardSearchRequestProto.ShardSearchRequest;
 import org.opensearch.core.transport.TransportResponse;
+import org.opensearch.search.internal.ProtobufShardSearchRequest;
 import org.opensearch.threadpool.ThreadPool;
 
 import java.io.EOFException;
@@ -327,6 +329,23 @@ public class InboundHandler {
                     }
                 } catch (Exception e) {
                     sendErrorResponse(action, transportChannel, e);
+                }
+            } else if (receivedMessage.hasShardSearchRequest()) {
+                System.out.println("ShardSearchRequest received");
+                System.out.println(receivedMessage.getShardSearchRequest());
+                final ShardSearchRequest shardSearchReq = receivedMessage.getShardSearchRequest();
+                ProtobufShardSearchRequest protobufShardSearchRequest = new ProtobufShardSearchRequest(shardSearchReq);
+                final T request = (T) protobufShardSearchRequest;
+                request.remoteAddress(new TransportAddress(channel.getRemoteAddress()));
+                final String executor = reg.getExecutor();
+                if (ThreadPool.Names.SAME.equals(executor)) {
+                    try {
+                        reg.processMessageReceived(request, transportChannel);
+                    } catch (Exception e) {
+                        sendErrorResponse(reg.getAction(), transportChannel, e);
+                    }
+                } else {
+                    threadPool.executor(executor).execute(new ProtobufRequestHandler<>(reg, request, transportChannel));
                 }
             }
         } catch (Exception e) {

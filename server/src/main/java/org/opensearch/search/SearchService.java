@@ -624,6 +624,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     }
 
     private IndexShard getShard(ShardSearchRequest request) {
+        System.out.println("getShard");
         if (request.readerId() != null) {
             return findReaderContext(request.readerId(), request).indexShard();
         } else {
@@ -632,6 +633,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     }
 
     private IndexShard getShardProtobuf(ProtobufShardSearchRequest request) {
+        System.out.println("getShardProtobuf");
         if (request.readerId() != null) {
             return findReaderContext(request.readerId(), request).indexShard();
         } else {
@@ -939,6 +941,8 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     }
 
     private ReaderContext getReaderContext(ShardSearchContextId id) {
+        System.out.println("getReaderContext");
+        System.out.println(id.getSessionId());
         if (sessionId.equals(id.getSessionId()) == false && id.getSessionId().isEmpty() == false) {
             throw new SearchContextMissingException(id);
         }
@@ -946,6 +950,8 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     }
 
     private ReaderContext findReaderContext(ShardSearchContextId id, TransportRequest request) throws SearchContextMissingException {
+        System.out.println("findReaderContext");
+        System.out.println(id);
         final ReaderContext reader = getReaderContext(id);
         if (reader == null) {
             throw new SearchContextMissingException(id);
@@ -1357,7 +1363,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
             // might end up with incorrect state since we are using now() or script services
             // during rewrite and normalized / evaluate templates etc.
             QueryShardContext context = new QueryShardContext(searchContext.getQueryShardContext());
-            Rewriteable.rewrite(request.getRewriteable(), context, true);
+            // Rewriteable.rewrite(request.getRewriteable(), context, true);
             assert searchContext.getQueryShardContext().isCacheable();
             success = true;
         } finally {
@@ -1746,7 +1752,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         } else {
             completionSuggestions = Collections.emptyList();
         }
-        if (context.request().scroll() != null) {
+        if ((context.request() != null && context.request().scroll() != null) || (context.protobufShardSearchRequest() != null && context.protobufShardSearchRequest().scroll() != null)) {
             TopDocs topDocs = context.queryResult().topDocs().topDocs;
             docIdsToLoad = new int[topDocs.scoreDocs.length + numSuggestDocs];
             for (int i = 0; i < topDocs.scoreDocs.length; i++) {
@@ -1991,6 +1997,8 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     }
 
     private void rewriteAndFetchShardRequest(IndexShard shard, ShardSearchRequest request, ActionListener<ShardSearchRequest> listener) {
+        System.out.println("SearchService rewriteAndFetchShardRequest");
+        System.out.println("ShardSearchRequest: " + request);
         ActionListener<Rewriteable> actionListener = ActionListener.wrap(r -> {
             if (request.readerId() != null) {
                 listener.onResponse(request);
@@ -2006,6 +2014,8 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     }
 
     private void rewriteAndFetchShardRequestProtobuf(IndexShard shard, ProtobufShardSearchRequest request, ActionListener<ProtobufShardSearchRequest> listener) {
+        System.out.println("SearchService rewriteAndFetchShardRequestProtobuf");
+        System.out.println("ProtobufShardSearchRequest: " + request);
         ActionListener<Rewriteable> actionListener = ActionListener.wrap(r -> {
             if (request.readerId() != null) {
                 listener.onResponse(request);

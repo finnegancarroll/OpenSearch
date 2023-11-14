@@ -262,6 +262,7 @@ public class ShardSearchRequest extends TransportRequest implements IndicesReque
         canReturnNullResponseIfMatchNoDocs = in.readBoolean();
         bottomSortValues = in.readOptionalWriteable(SearchSortValuesAndFormats::new);
         readerId = in.readOptionalWriteable(ShardSearchContextId::new);
+        System.out.println("Reader id: " + readerId);
         keepAlive = in.readOptionalTimeValue();
         originalIndices = OriginalIndices.readOriginalIndices(in);
         assert keepAlive == null || readerId != null : "readerId: " + readerId + " keepAlive: " + keepAlive;
@@ -520,8 +521,12 @@ public class ShardSearchRequest extends TransportRequest implements IndicesReque
 
         @Override
         public Rewriteable rewrite(QueryRewriteContext ctx) throws IOException {
+            System.out.println("Rewriting request source");
             SearchSourceBuilder newSource = request.source() == null ? null : Rewriteable.rewrite(request.source(), ctx);
+            System.out.println("Rewriting request source done");
+            System.out.println("Rewriting request alias filter");
             AliasFilter newAliasFilter = Rewriteable.rewrite(request.getAliasFilter(), ctx);
+            System.out.println("Rewriting request alias filter done");
 
             QueryShardContext shardContext = ctx.convertToShardContext();
 

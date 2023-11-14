@@ -54,6 +54,7 @@ import org.opensearch.index.query.Rewriteable;
 import org.opensearch.search.DocValueFormat;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -66,7 +67,7 @@ import static org.opensearch.index.query.AbstractQueryBuilder.parseInnerQueryBui
  *
  * @opensearch.internal
  */
-public abstract class SortBuilder<T extends SortBuilder<T>> implements NamedWriteable, ToXContentObject, Rewriteable<SortBuilder<?>> {
+public abstract class SortBuilder<T extends SortBuilder<T>> implements NamedWriteable, ToXContentObject, Rewriteable<SortBuilder<?>>, Serializable {
 
     protected SortOrder order = SortOrder.ASC;
 

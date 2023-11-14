@@ -53,6 +53,7 @@ import org.opensearch.search.DocValueFormat;
 import org.opensearch.search.sort.SortAndFormats;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,7 +65,7 @@ import java.util.Objects;
  *
  * @opensearch.internal
  */
-public class SearchAfterBuilder implements ToXContentObject, Writeable {
+public class SearchAfterBuilder implements ToXContentObject, Writeable, Serializable {
     public static final ParseField SEARCH_AFTER = new ParseField("search_after");
     private static final Object[] EMPTY_SORT_VALUES = new Object[0];
 

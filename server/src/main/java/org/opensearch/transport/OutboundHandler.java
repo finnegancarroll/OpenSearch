@@ -189,7 +189,9 @@ final class OutboundHandler {
             );
             sendProtobufMessage(channel, protobufMessage, listener);
         } else if (canonicalName.contains("ProtobufShardSearch")){
+            System.out.println("OutboundHandler sendRequest for shardsearchrequest");
             ProtobufShardSearchRequest protobufShardSearchRequest = (ProtobufShardSearchRequest) request;
+            System.out.println("ProtobufShardSearchRequest: " + protobufShardSearchRequest);
             byte[] bytes = new byte[1];
             bytes[0] = 0;
             ProtobufOutboundMessage protobufMessage = new ProtobufOutboundMessage(
@@ -197,10 +199,11 @@ final class OutboundHandler {
                 bytes,
                 Version.CURRENT,
                 threadPool.getThreadContext(),
-                protobufClusterStateRequest.request(),
+                protobufShardSearchRequest.request(),
                 features,
                 action
             );
+            System.out.println("ProtobufOutboundMessage: " + protobufMessage);
             sendProtobufMessage(channel, protobufMessage, listener);
         } else {
             sendMessage(channel, message, listener);

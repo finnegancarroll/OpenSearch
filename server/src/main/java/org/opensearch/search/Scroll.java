@@ -38,6 +38,7 @@ import org.opensearch.core.common.io.stream.Writeable;
 import org.opensearch.common.unit.TimeValue;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -46,7 +47,7 @@ import java.util.Objects;
  *
  * @opensearch.internal
  */
-public final class Scroll implements Writeable {
+public final class Scroll implements Writeable, Serializable {
 
     private final TimeValue keepAlive;
 

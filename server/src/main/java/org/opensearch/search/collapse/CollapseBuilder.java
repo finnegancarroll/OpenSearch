@@ -49,6 +49,7 @@ import org.opensearch.index.query.InnerHitBuilder;
 import org.opensearch.index.query.QueryShardContext;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -59,7 +60,7 @@ import java.util.Objects;
  *
  * @opensearch.internal
  */
-public class CollapseBuilder implements Writeable, ToXContentObject {
+public class CollapseBuilder implements Writeable, ToXContentObject, Serializable {
     public static final ParseField FIELD_FIELD = new ParseField("field");
     public static final ParseField INNER_HITS_FIELD = new ParseField("inner_hits");
     public static final ParseField MAX_CONCURRENT_GROUP_REQUESTS_FIELD = new ParseField("max_concurrent_group_searches");

@@ -47,6 +47,7 @@ import org.opensearch.index.query.QueryShardContext;
 import org.opensearch.search.suggest.SuggestionSearchContext.SuggestionContext;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -61,7 +62,7 @@ import java.util.Objects;
  *
  * @opensearch.internal
  */
-public class SuggestBuilder implements Writeable, ToXContentObject {
+public class SuggestBuilder implements Writeable, ToXContentObject, Serializable {
     protected static final ParseField GLOBAL_TEXT_FIELD = new ParseField("text");
 
     private String globalText;

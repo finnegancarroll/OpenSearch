@@ -35,6 +35,7 @@ import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.CollectorManager;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.Query;
+import org.opensearch.action.search.ProtobufSearchShardTask;
 import org.opensearch.action.search.SearchShardTask;
 import org.opensearch.action.search.SearchType;
 import org.opensearch.common.Nullable;
@@ -123,6 +124,8 @@ public abstract class SearchContext implements Releasable {
 
     public abstract SearchShardTask getTask();
 
+    public abstract ProtobufSearchShardTask getProtobufTask();
+
     public abstract boolean isCancelled();
 
     public boolean isSearchTimedOut() {
@@ -161,6 +164,8 @@ public abstract class SearchContext implements Releasable {
     public abstract String source();
 
     public abstract ShardSearchRequest request();
+
+    public abstract ProtobufShardSearchRequest protobufShardSearchRequest();
 
     public abstract SearchType searchType();
 
@@ -411,6 +416,9 @@ public abstract class SearchContext implements Releasable {
      * @return true if the request contains only suggest
      */
     public final boolean hasOnlySuggest() {
+        if (request() == null) {
+            return protobufShardSearchRequest().source() != null && protobufShardSearchRequest().source().isSuggestOnly();
+        }
         return request().source() != null && request().source().isSuggestOnly();
     }
 

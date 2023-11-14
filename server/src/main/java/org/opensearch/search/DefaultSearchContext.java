@@ -394,7 +394,12 @@ final class DefaultSearchContext extends SearchContext {
         }
         // initialize the filtering alias based on the provided filters
         try {
-            final QueryBuilder queryBuilder = request.getAliasFilter().getQueryBuilder();
+            final QueryBuilder queryBuilder;
+            if (request == null) {
+                queryBuilder = protobufShardSearchRequest.getAliasFilter().getQueryBuilder();
+            } else {
+                queryBuilder = request.getAliasFilter().getQueryBuilder();
+            }
             aliasFilter = queryBuilder == null ? null : queryBuilder.toQuery(queryShardContext);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -463,6 +468,11 @@ final class DefaultSearchContext extends SearchContext {
     @Override
     public ShardSearchRequest request() {
         return this.request;
+    }
+
+    @Override
+    public ProtobufShardSearchRequest protobufShardSearchRequest() {
+        return this.protobufShardSearchRequest;
     }
 
     @Override
@@ -970,7 +980,15 @@ final class DefaultSearchContext extends SearchContext {
     }
 
     @Override
+    public ProtobufSearchShardTask getProtobufTask() {
+        return protobufSearchShardTask;
+    }
+
+    @Override
     public boolean isCancelled() {
+        if (task == null) {
+            return protobufSearchShardTask.isCancelled();
+        }
         return task.isCancelled();
     }
 

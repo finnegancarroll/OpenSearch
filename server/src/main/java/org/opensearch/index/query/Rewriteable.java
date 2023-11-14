@@ -112,31 +112,34 @@ public interface Rewriteable<T> {
         ActionListener<T> rewriteResponse,
         int iteration
     ) {
+        System.out.println("In rewriteAndFetch");
+        System.out.println("Original: " + original.getClass());
+        System.out.println("Context: " + context.getClass());
         T builder = original;
         try {
-            for (T rewrittenBuilder = builder.rewrite(context); rewrittenBuilder != builder; rewrittenBuilder = builder.rewrite(context)) {
-                builder = rewrittenBuilder;
-                if (iteration++ >= MAX_REWRITE_ROUNDS) {
-                    // this is some protection against user provided queries if they don't obey the contract of rewrite we allow 16 rounds
-                    // and then we fail to prevent infinite loops
-                    throw new IllegalStateException(
-                        "too many rewrite rounds, rewriteable might return new objects even if they are not " + "rewritten"
-                    );
-                }
-                if (context.hasAsyncActions()) {
-                    T finalBuilder = builder;
-                    final int currentIterationNumber = iteration;
-                    context.executeAsyncActions(
-                        ActionListener.wrap(
-                            n -> rewriteAndFetch(finalBuilder, context, rewriteResponse, currentIterationNumber),
-                            rewriteResponse::onFailure
-                        )
-                    );
-                    return;
-                }
-            }
+            // for (T rewrittenBuilder = builder.rewrite(context); rewrittenBuilder != builder; rewrittenBuilder = builder.rewrite(context)) {
+            //     builder = rewrittenBuilder;
+            //     if (iteration++ >= MAX_REWRITE_ROUNDS) {
+            //         // this is some protection against user provided queries if they don't obey the contract of rewrite we allow 16 rounds
+            //         // and then we fail to prevent infinite loops
+            //         throw new IllegalStateException(
+            //             "too many rewrite rounds, rewriteable might return new objects even if they are not " + "rewritten"
+            //         );
+            //     }
+            //     if (context.hasAsyncActions()) {
+            //         T finalBuilder = builder;
+            //         final int currentIterationNumber = iteration;
+            //         context.executeAsyncActions(
+            //             ActionListener.wrap(
+            //                 n -> rewriteAndFetch(finalBuilder, context, rewriteResponse, currentIterationNumber),
+            //                 rewriteResponse::onFailure
+            //             )
+            //         );
+            //         return;
+            //     }
+            // }
             rewriteResponse.onResponse(builder);
-        } catch (IOException | IllegalArgumentException | ParsingException ex) {
+        } catch (IllegalArgumentException | ParsingException ex) {
             rewriteResponse.onFailure(ex);
         }
     }

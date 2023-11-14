@@ -44,6 +44,7 @@ import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -52,7 +53,7 @@ import java.util.Objects;
  *
  * @opensearch.internal
  */
-public final class PointInTimeBuilder implements Writeable, ToXContentObject {
+public final class PointInTimeBuilder implements Writeable, ToXContentObject, Serializable {
     private static final ParseField ID_FIELD = new ParseField("id");
     private static final ParseField KEEP_ALIVE_FIELD = new ParseField("keep_alive");
     private static final ObjectParser<XContentParams, Void> PARSER;

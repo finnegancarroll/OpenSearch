@@ -32,6 +32,8 @@
 
 package org.opensearch.search;
 
+import java.io.Serializable;
+
 import org.opensearch.common.CheckedFunction;
 import org.opensearch.core.common.io.stream.NamedWriteable;
 import org.opensearch.core.common.io.stream.StreamInput;
@@ -58,7 +60,7 @@ import org.opensearch.plugins.SearchPlugin.SearchExtSpec;
  *
  * @opensearch.internal
  */
-public abstract class SearchExtBuilder implements NamedWriteable, ToXContentFragment {
+public abstract class SearchExtBuilder implements NamedWriteable, ToXContentFragment, Serializable {
 
     public abstract int hashCode();
 

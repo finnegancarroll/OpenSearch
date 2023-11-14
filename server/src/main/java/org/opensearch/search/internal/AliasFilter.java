@@ -41,6 +41,7 @@ import org.opensearch.index.query.QueryRewriteContext;
 import org.opensearch.index.query.Rewriteable;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -49,7 +50,7 @@ import java.util.Objects;
  *
  * @opensearch.internal
  */
-public final class AliasFilter implements Writeable, Rewriteable<AliasFilter> {
+public final class AliasFilter implements Writeable, Rewriteable<AliasFilter>, Serializable {
 
     private final String[] aliases;
     private final QueryBuilder filter;

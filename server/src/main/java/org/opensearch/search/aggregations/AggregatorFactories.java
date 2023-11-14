@@ -59,6 +59,7 @@ import org.opensearch.search.profile.Profilers;
 import org.opensearch.search.profile.aggregation.ProfilingAggregator;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -333,7 +334,7 @@ public class AggregatorFactories {
      *
      * @opensearch.internal
      */
-    public static class Builder implements Writeable, ToXContentObject {
+    public static class Builder implements Writeable, ToXContentObject, Serializable {
         private final Set<String> names = new HashSet<>();
 
         // Using LinkedHashSets to preserve the order of insertion, that makes the results

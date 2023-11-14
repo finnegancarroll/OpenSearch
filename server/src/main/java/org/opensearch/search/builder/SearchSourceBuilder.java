@@ -74,6 +74,7 @@ import org.opensearch.search.sort.SortOrder;
 import org.opensearch.search.suggest.SuggestBuilder;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -93,7 +94,7 @@ import static org.opensearch.search.internal.SearchContext.TRACK_TOTAL_HITS_DISA
  *
  * @opensearch.internal
  */
-public final class SearchSourceBuilder implements Writeable, ToXContentObject, Rewriteable<SearchSourceBuilder> {
+public final class SearchSourceBuilder implements Writeable, ToXContentObject, Rewriteable<SearchSourceBuilder>, Serializable {
     private static final DeprecationLogger deprecationLogger = DeprecationLogger.getLogger(SearchSourceBuilder.class);
 
     public static final ParseField FROM_FIELD = new ParseField("from");
@@ -1495,7 +1496,7 @@ public final class SearchSourceBuilder implements Writeable, ToXContentObject, R
      *
      * @opensearch.internal
      */
-    public static class IndexBoost implements Writeable, ToXContentObject {
+    public static class IndexBoost implements Writeable, ToXContentObject, Serializable {
         private final String index;
         private final float boost;
 
@@ -1596,7 +1597,7 @@ public final class SearchSourceBuilder implements Writeable, ToXContentObject, R
      *
      * @opensearch.internal
      */
-    public static class ScriptField implements Writeable, ToXContentFragment {
+    public static class ScriptField implements Writeable, ToXContentFragment, Serializable {
 
         private final boolean ignoreFailure;
         private final String fieldName;

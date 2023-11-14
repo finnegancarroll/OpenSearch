@@ -42,6 +42,7 @@ import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.rest.RestRequest;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -53,7 +54,7 @@ import java.util.Objects;
  *
  * @opensearch.internal
  */
-public class StoredFieldsContext implements Writeable {
+public class StoredFieldsContext implements Writeable, Serializable {
     public static final String _NONE_ = "_none_";
 
     private final List<String> fieldNames;

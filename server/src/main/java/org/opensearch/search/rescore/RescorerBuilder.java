@@ -46,6 +46,7 @@ import org.opensearch.index.query.QueryShardContext;
 import org.opensearch.index.query.Rewriteable;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -57,7 +58,8 @@ public abstract class RescorerBuilder<RB extends RescorerBuilder<RB>>
     implements
         NamedWriteable,
         ToXContentObject,
-        Rewriteable<RescorerBuilder<RB>> {
+        Rewriteable<RescorerBuilder<RB>>,
+        Serializable {
     public static final int DEFAULT_WINDOW_SIZE = 10;
 
     protected Integer windowSize;

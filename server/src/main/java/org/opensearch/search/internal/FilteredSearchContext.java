@@ -36,6 +36,7 @@ import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.CollectorManager;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.Query;
+import org.opensearch.action.search.ProtobufSearchShardTask;
 import org.opensearch.action.search.SearchShardTask;
 import org.opensearch.action.search.SearchType;
 import org.opensearch.common.unit.TimeValue;
@@ -138,6 +139,11 @@ public abstract class FilteredSearchContext extends SearchContext {
     @Override
     public ShardSearchRequest request() {
         return in.request();
+    }
+
+    @Override
+    public ProtobufShardSearchRequest protobufShardSearchRequest() {
+        return in.protobufShardSearchRequest();
     }
 
     @Override
@@ -518,6 +524,11 @@ public abstract class FilteredSearchContext extends SearchContext {
     @Override
     public SearchShardTask getTask() {
         return in.getTask();
+    }
+
+    @Override
+    public ProtobufSearchShardTask getProtobufTask() {
+        return in.getProtobufTask();
     }
 
     @Override
