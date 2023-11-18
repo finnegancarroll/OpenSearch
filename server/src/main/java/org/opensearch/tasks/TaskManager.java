@@ -211,11 +211,6 @@ public class TaskManager implements ClusterStateApplier {
      * Registers a task without parent task
      */
     public Task register(String type, String action, TaskAwareRequest request) {
-        if (action.contains("search")) {
-            System.out.println("Registering task in TaskManager");
-            System.out.println("type: " + type);
-            System.out.println("action: " + action);
-        }
         Map<String, String> headers = new HashMap<>();
         long headerSize = 0;
         long maxSize = maxHeaderSize.getBytes();
@@ -294,12 +289,7 @@ public class TaskManager implements ClusterStateApplier {
     /**
      * Registers a task without parent task
     */
-    public ProtobufTask registerProtobuf(String type, String action, ProtobufTaskAwareRequest request) {
-        if (action.contains("search")) {
-            System.out.println("Registering protobuf task in TaskManager");
-            System.out.println("type: " + type);
-            System.out.println("action: " + action);
-        }        
+    public ProtobufTask registerProtobuf(String type, String action, ProtobufTaskAwareRequest request) {     
         Map<String, String> headers = new HashMap<>();
         long headerSize = 0;
         long maxSize = maxHeaderSize.getBytes();

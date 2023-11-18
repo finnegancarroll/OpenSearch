@@ -250,7 +250,6 @@ public class ProtobufTransportSearchAction extends ProtobufHandledTransportActio
 
     @Override
     protected void doExecute(ProtobufTask task, ProtobufSearchRequest searchRequest, ActionListener<ProtobufSearchResponse> listener) {
-        System.out.println("ProtobufTransportSearchAction doExecute");
         // only if task is of type ProtobufCancellableTask and support cancellation on timeout, treat this request eligible for timeout based
         // cancellation. There may be other top level requests like AsyncSearch which is using ProtobufSearchRequest internally and has it's own
         // cancellation mechanism. For such cases, the ProtobufSearchRequest when created can override the createTask and set the
@@ -361,7 +360,6 @@ public class ProtobufTransportSearchAction extends ProtobufHandledTransportActio
         SearchAsyncActionProvider searchAsyncActionProvider,
         ActionListener<ProtobufSearchResponse> originalListener
     ) {
-        System.out.println("TrasportSearchAction executeRequest");
         final long relativeStartNanos = System.nanoTime();
         final SearchTimeProvider timeProvider = new SearchTimeProvider(
             originalSearchRequest.getOrCreateAbsoluteStartMillis(),
@@ -762,8 +760,6 @@ public class ProtobufTransportSearchAction extends ProtobufHandledTransportActio
         SearchContextId searchContext,
         SearchAsyncActionProvider searchAsyncActionProvider
     ) {
-        System.out.println("Task is: " + task.getClass().getName());
-        System.out.println("Task is: " + task);
         executeSearch(
             (ProtobufSearchTask) task,
             timeProvider,
@@ -896,7 +892,6 @@ public class ProtobufTransportSearchAction extends ProtobufHandledTransportActio
         @Nullable SearchContextId searchContext,
         SearchAsyncActionProvider searchAsyncActionProvider
     ) {
-        System.out.println("ProtobufTransportSearchAction executeSearch");
         clusterState.blocks().globalBlockedRaiseException(ClusterBlockLevel.READ);
 
         // TODO: I think startTime() should become part of ActionRequest and that should be used both for index name
@@ -986,9 +981,6 @@ public class ProtobufTransportSearchAction extends ProtobufHandledTransportActio
             concreteLocalIndices,
             localShardIterators.size() + remoteShardIterators.size()
         );
-        System.out.println("Going to ProtobufAbstractSearchAsyncAction");
-        System.out.println("Search request: " + searchRequest);
-        System.out.println("Cluster state: " + clusterState);
         searchAsyncActionProvider.asyncSearchAction(
             task,
             searchRequest,

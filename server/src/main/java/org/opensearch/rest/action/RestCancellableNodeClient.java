@@ -101,10 +101,6 @@ public class RestCancellableNodeClient extends FilterClient {
         Request request,
         ActionListener<Response> listener
     ) {
-        System.out.println("RestCancellableNodeClient execute");
-        System.out.println("Action: " + action);
-        System.out.println("Request: " + request);
-        System.out.println("Listener: " + listener);
         CloseListener closeListener = httpChannels.computeIfAbsent(httpChannel, channel -> new CloseListener());
         TaskHolder taskHolder = new TaskHolder();
         Task task = client.executeLocally(action, request, new ActionListener<Response>() {

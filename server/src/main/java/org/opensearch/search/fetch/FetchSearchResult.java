@@ -55,7 +55,7 @@ import java.io.OutputStream;
  */
 public final class FetchSearchResult extends SearchPhaseResult {
 
-    // TODO: proto message
+    // TODO: Write SearchHits as a proto message
     private SearchHits hits;
     // client side counter
     private transient int counter;

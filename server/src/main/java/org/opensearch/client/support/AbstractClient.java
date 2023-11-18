@@ -473,7 +473,6 @@ public abstract class AbstractClient implements Client {
         Request request,
         ActionListener<Response> listener
     ) {
-        System.out.println("Abstract client execute");
         doExecute(action, request, listener);
     }
 

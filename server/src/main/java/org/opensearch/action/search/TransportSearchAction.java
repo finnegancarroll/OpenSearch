@@ -276,7 +276,6 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
 
     @Override
     protected void doExecute(Task task, SearchRequest searchRequest, ActionListener<SearchResponse> listener) {
-        System.out.println("TransportSearchAction doExecute");
         // only if task is of type CancellableTask and support cancellation on timeout, treat this request eligible for timeout based
         // cancellation. There may be other top level requests like AsyncSearch which is using SearchRequest internally and has it's own
         // cancellation mechanism. For such cases, the SearchRequest when created can override the createTask and set the
@@ -387,7 +386,6 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         SearchAsyncActionProvider searchAsyncActionProvider,
         ActionListener<SearchResponse> originalListener
     ) {
-        System.out.println("TrasportSearchAction executeRequest");
         final long relativeStartNanos = System.nanoTime();
         final SearchTimeProvider timeProvider = new SearchTimeProvider(
             originalSearchRequest.getOrCreateAbsoluteStartMillis(),
@@ -788,8 +786,6 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         SearchContextId searchContext,
         SearchAsyncActionProvider searchAsyncActionProvider
     ) {
-        System.out.println("Task is: " + task.getClass().getName());
-        System.out.println("Task is: " + task);
         executeSearch(
             (SearchTask) task,
             timeProvider,
@@ -922,7 +918,6 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         @Nullable SearchContextId searchContext,
         SearchAsyncActionProvider searchAsyncActionProvider
     ) {
-        System.out.println("TransportSearchAction executeSearch");
         clusterState.blocks().globalBlockedRaiseException(ClusterBlockLevel.READ);
 
         // TODO: I think startTime() should become part of ActionRequest and that should be used both for index name
@@ -1012,9 +1007,6 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             concreteLocalIndices,
             localShardIterators.size() + remoteShardIterators.size()
         );
-        System.out.println("Going to AbstractSearchAsyncAction");
-        System.out.println("Search request: " + searchRequest);
-        System.out.println("Cluster state: " + clusterState);
         searchAsyncActionProvider.asyncSearchAction(
             task,
             searchRequest,

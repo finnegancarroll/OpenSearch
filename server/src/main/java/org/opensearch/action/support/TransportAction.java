@@ -95,10 +95,8 @@ public abstract class TransportAction<Request extends ActionRequest, Response ex
         final Releasable unregisterChildNode = registerChildNode(request.getParentTask());
         final Task task;
 
-        System.out.println("TransportAction execute");
         try {
             task = taskManager.register("transport", actionName, request);
-            System.out.println("Task registered from execute is " + task);
         } catch (TaskCancelledException e) {
             unregisterChildNode.close();
             throw e;
@@ -212,7 +210,6 @@ public abstract class TransportAction<Request extends ActionRequest, Response ex
 
         @Override
         public void proceed(Task task, String actionName, Request request, ActionListener<Response> listener) {
-            System.out.println("RequestFilterChain proceed");
             int i = index.getAndIncrement();
             try {
                 if (i < this.action.filters.length) {

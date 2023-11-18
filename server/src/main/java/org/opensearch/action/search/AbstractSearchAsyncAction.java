@@ -194,9 +194,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
      * This is the main entry point for a search. This method starts the search execution of the initial phase.
      */
     public final void start() {
-        System.out.println("AbstractSearchAsyncAction start");
         if (getNumShards() == 0) {
-            System.out.println("Number of shards is 0");
             // no search shards to search on, bail with empty response
             // (it happens with search across _all with no indices around and consistent with broadcast operations)
             int trackTotalHitsUpTo = request.source() == null ? SearchContext.DEFAULT_TRACK_TOTAL_HITS_UP_TO
@@ -224,7 +222,6 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
 
     @Override
     public final void run() {
-        System.out.println("AbstractSearchAsyncAction run: running the phase coming from phase.recordAndRun()");
         for (final SearchShardIterator iterator : toSkipShardsIts) {
             assert iterator.skip();
             skipShard(iterator);
@@ -428,8 +425,6 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     }
 
     private void executePhase(SearchPhase phase) {
-        System.out.println("Execute Phase");
-        System.out.println("Phase: " + phase);
         try {
             phase.run();
         } catch (Exception e) {

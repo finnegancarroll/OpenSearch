@@ -89,6 +89,7 @@ public final class QuerySearchResult extends SearchPhaseResult {
     private Suggest suggest;
     private boolean searchTimedOut;
     private Boolean terminatedEarly = null;
+    // TODO: Write ProfileShardResult as a proto message
     private ProfileShardResult profileShardResults;
     private boolean hasProfileResults;
     private long serviceTimeEWMA = -1;
@@ -121,7 +122,6 @@ public final class QuerySearchResult extends SearchPhaseResult {
     public QuerySearchResult(ShardSearchContextId contextId, SearchShardTarget shardTarget, ShardSearchRequest shardSearchRequest) {
         this.contextId = contextId;
         setSearchShardTarget(shardTarget);
-        System.out.println("search shard target: " + shardTarget);
         isNull = false;
         setShardSearchRequest(shardSearchRequest);
         this.querySearchResult = null;
@@ -130,7 +130,6 @@ public final class QuerySearchResult extends SearchPhaseResult {
     public QuerySearchResult(ShardSearchContextId contextId, SearchShardTarget shardTarget, ProtobufShardSearchRequest shardSearchRequest) {
         this.contextId = contextId;
         setSearchShardTarget(shardTarget);
-        System.out.println("search shard target: " + shardTarget);
         isNull = false;
         setProtobufShardSearchRequest(shardSearchRequest);
         ShardSearchRequestProto.ShardId shardIdProto = ShardSearchRequestProto.ShardId.newBuilder()

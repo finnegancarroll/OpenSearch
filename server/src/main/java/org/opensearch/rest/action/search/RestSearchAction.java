@@ -112,7 +112,6 @@ public class RestSearchAction extends BaseRestHandler {
 
     @Override
     public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
-        System.out.println("In search API");
         SearchRequest searchRequest = new SearchRequest();
         /*
          * We have to pull out the call to `source().size(size)` because
@@ -133,7 +132,6 @@ public class RestSearchAction extends BaseRestHandler {
 
         return channel -> {
             RestCancellableNodeClient cancelClient = new RestCancellableNodeClient(client, request.getHttpChannel());
-            System.out.println("Cancel client execute");
             cancelClient.execute(SearchAction.INSTANCE, searchRequest, new RestStatusToXContentListener<>(channel));
         };
     }
@@ -215,7 +213,6 @@ public class RestSearchAction extends BaseRestHandler {
         }
 
         searchRequest.setCancelAfterTimeInterval(request.paramAsTime("cancel_after_time_interval", null));
-        System.out.println("Search request is: " + searchRequest.toString());
     }
 
     /**

@@ -153,7 +153,6 @@ class ProtobufSearchQueryThenFetchAsyncAction extends ProtobufAbstractSearchAsyn
         // set the current best bottom field doc
         if (bottomSortCollector.getBottomSortValues() != null) {
             // request.setBottomSortValues(bottomSortCollector.getBottomSortValues());
-            System.out.println("Bottom sort values is not null......now what????");
         }
         return request;
     }

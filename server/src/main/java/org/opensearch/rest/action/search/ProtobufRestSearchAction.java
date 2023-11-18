@@ -90,7 +90,6 @@ public class ProtobufRestSearchAction extends ProtobufBaseRestHandler {
 
     @Override
     public RestChannelConsumer prepareRequest(final RestRequest request, final ProtobufNodeClient client) throws IOException {
-        System.out.println("In protobuf search API");
         ProtobufSearchRequest searchRequest = new ProtobufSearchRequest();
         /*
          * We have to pull out the call to `source().size(size)` because
@@ -111,7 +110,6 @@ public class ProtobufRestSearchAction extends ProtobufBaseRestHandler {
 
         return channel -> {
             ProtobufRestCancellableNodeClient cancelClient = new ProtobufRestCancellableNodeClient(client, request.getHttpChannel());
-            System.out.println("Cancel client execute");
             cancelClient.execute(ProtobufSearchAction.INSTANCE, searchRequest, new RestStatusToXContentListener<>(channel));
         };
     }
@@ -193,7 +191,6 @@ public class ProtobufRestSearchAction extends ProtobufBaseRestHandler {
         }
 
         searchRequest.setCancelAfterTimeInterval(request.paramAsTime("cancel_after_time_interval", null));
-        System.out.println("Search request is: " + searchRequest.toString());
     }
 
     /**

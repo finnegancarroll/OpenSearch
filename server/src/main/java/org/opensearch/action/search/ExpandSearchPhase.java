@@ -80,8 +80,6 @@ final class ExpandSearchPhase extends SearchPhase {
 
     @Override
     public void run() {
-        System.out.println("ExpandSearchPhase run");
-        System.out.println("Is collapse request: " + isCollapseRequest());
         if (isCollapseRequest() && searchResponse.hits().getHits().length > 0) {
             SearchRequest searchRequest = context.getRequest();
             CollapseBuilder collapseBuilder = searchRequest.source().collapse();

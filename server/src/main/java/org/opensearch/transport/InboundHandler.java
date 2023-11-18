@@ -332,8 +332,6 @@ public class InboundHandler {
                     sendErrorResponse(action, transportChannel, e);
                 }
             } else if (receivedMessage.hasShardSearchRequest()) {
-                System.out.println("ShardSearchRequest received");
-                System.out.println(receivedMessage.getShardSearchRequest());
                 final ShardSearchRequest shardSearchReq = receivedMessage.getShardSearchRequest();
                 ProtobufShardSearchRequest protobufShardSearchRequest = new ProtobufShardSearchRequest(shardSearchReq);
                 final T request = (T) protobufShardSearchRequest;
@@ -608,8 +606,6 @@ public class InboundHandler {
                     threadPool.executor(executor).execute(() -> doHandleResponse(handler, response));
                 }
             } else if (receivedMessage.hasQueryFetchSearchResult()) {
-                System.out.println("Incoming message has the protobuf query fetch search result");
-                System.out.println("QueryFetchSearchResult: " + receivedMessage.getQueryFetchSearchResult());
                 final QueryFetchSearchResult queryFetchSearchResult = receivedMessage.getQueryFetchSearchResult();
                 org.opensearch.search.fetch.QueryFetchSearchResult queryFetchSearchResult2 = new org.opensearch.search.fetch.QueryFetchSearchResult(queryFetchSearchResult);
                 final T response = (T) queryFetchSearchResult2;

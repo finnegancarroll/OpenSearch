@@ -50,7 +50,6 @@ import java.io.OutputStream;
  */
 public final class QueryFetchSearchResult extends SearchPhaseResult {
 
-    // TODO: proto message
     private final QuerySearchResult queryResult;
     private final FetchSearchResult fetchResult;
 
@@ -72,8 +71,6 @@ public final class QueryFetchSearchResult extends SearchPhaseResult {
     public QueryFetchSearchResult(QuerySearchResult queryResult, FetchSearchResult fetchResult) {
         this.queryResult = queryResult;
         this.fetchResult = fetchResult;
-        System.out.println("QueryResult: " + queryResult);
-        System.out.println("FetchResult: " + fetchResult);
         if (queryResult.response() != null && fetchResult.response() != null) {
             this.queryFetchSearchResult = QueryFetchSearchResultProto.QueryFetchSearchResult.newBuilder()
                 .setQueryResult(queryResult.response())

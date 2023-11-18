@@ -107,7 +107,6 @@ public class NodeClient extends AbstractClient {
         Request request,
         ActionListener<Response> listener
     ) {
-        System.out.println("NodeClient executeLocally");
         return transportAction(action).execute(request, listener);
     }
 
@@ -145,7 +144,6 @@ public class NodeClient extends AbstractClient {
         if (transportAction == null) {
             throw new IllegalStateException("failed to find action [" + action + "] to execute");
         }
-        System.out.println("Getting transport action: " + transportAction);
         return transportAction;
     }
 

@@ -112,11 +112,9 @@ public interface Rewriteable<T> {
         ActionListener<T> rewriteResponse,
         int iteration
     ) {
-        System.out.println("In rewriteAndFetch");
-        System.out.println("Original: " + original.getClass());
-        System.out.println("Context: " + context.getClass());
         T builder = original;
         try {
+            // TODO: add this logic back once it works for proto messages
             // for (T rewrittenBuilder = builder.rewrite(context); rewrittenBuilder != builder; rewrittenBuilder = builder.rewrite(context)) {
             //     builder = rewrittenBuilder;
             //     if (iteration++ >= MAX_REWRITE_ROUNDS) {
