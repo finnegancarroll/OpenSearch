@@ -34,6 +34,7 @@ package org.opensearch.search.query;
 
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.TotalHits;
+import org.opensearch.action.OriginalIndices;
 import org.opensearch.common.io.stream.DelayableWriteable;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
@@ -50,8 +51,13 @@ import org.opensearch.search.internal.ShardSearchRequest;
 import org.opensearch.search.profile.NetworkTime;
 import org.opensearch.search.profile.ProfileShardResult;
 import org.opensearch.search.suggest.Suggest;
+import org.opensearch.server.proto.QuerySearchResultProto;
+import org.opensearch.server.proto.ShardSearchRequestProto;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import static org.opensearch.common.lucene.Lucene.readTopDocs;
 import static org.opensearch.common.lucene.Lucene.writeTopDocs;
@@ -90,6 +96,8 @@ public final class QuerySearchResult extends SearchPhaseResult {
 
     private final boolean isNull;
 
+    private final QuerySearchResultProto.QuerySearchResult querySearchResult;
+
     public QuerySearchResult() {
         this(false);
     }
@@ -101,33 +109,51 @@ public final class QuerySearchResult extends SearchPhaseResult {
             ShardSearchContextId id = new ShardSearchContextId(in);
             readFromWithId(id, in);
         }
+        this.querySearchResult = null;
     }
 
     public QuerySearchResult(byte[] in) throws IOException {
         super(in);
-        isNull = true;
-        if (isNull == false) {
-            ShardSearchContextId id = null;
-            // readFromWithId(id, in);
-        }
+        this.querySearchResult = QuerySearchResultProto.QuerySearchResult.parseFrom(in);
+        isNull = false;
     }
 
     public QuerySearchResult(ShardSearchContextId contextId, SearchShardTarget shardTarget, ShardSearchRequest shardSearchRequest) {
         this.contextId = contextId;
         setSearchShardTarget(shardTarget);
+        System.out.println("search shard target: " + shardTarget);
         isNull = false;
         setShardSearchRequest(shardSearchRequest);
+        this.querySearchResult = null;
     }
 
     public QuerySearchResult(ShardSearchContextId contextId, SearchShardTarget shardTarget, ProtobufShardSearchRequest shardSearchRequest) {
         this.contextId = contextId;
         setSearchShardTarget(shardTarget);
+        System.out.println("search shard target: " + shardTarget);
         isNull = false;
         setProtobufShardSearchRequest(shardSearchRequest);
+        ShardSearchRequestProto.ShardId shardIdProto = ShardSearchRequestProto.ShardId.newBuilder()
+                        .setShardId(shardTarget.getShardId().getId())
+                        .setHashCode(shardTarget.getShardId().hashCode())
+                        .setIndexName(shardTarget.getShardId().getIndexName())
+                        .setIndexUUID(shardTarget.getShardId().getIndex().getUUID())
+                        .build();
+        QuerySearchResultProto.QuerySearchResult.SearchShardTarget searchShardTarget = QuerySearchResultProto.QuerySearchResult.SearchShardTarget.newBuilder()
+                                                                                            .setNodeId(shardTarget.getNodeId())
+                                                                                            .setShardId(shardIdProto)
+                                                                                            .setClusterAlias(shardTarget.getClusterAlias())
+                                                                                            .build();
+        this.querySearchResult = QuerySearchResultProto.QuerySearchResult.newBuilder()
+                                    .setContextId(ShardSearchRequestProto.ShardSearchContextId.newBuilder().setSessionId(contextId.getSessionId()).setId(contextId.getId()).build())
+                                    .setShardSearchRequest(shardSearchRequest.request())
+                                    .setSearchShardTarget(searchShardTarget)
+                                    .build();
     }
 
     private QuerySearchResult(boolean isNull) {
         this.isNull = isNull;
+        this.querySearchResult = null;
     }
 
     /**
@@ -393,6 +419,11 @@ public final class QuerySearchResult extends SearchPhaseResult {
         }
     }
 
+     @Override
+    public void writeTo(OutputStream out) throws IOException {
+        out.write(querySearchResult.toByteArray());
+    }
+
     public void writeToNoId(StreamOutput out) throws IOException {
         out.writeVInt(from);
         out.writeVInt(size);
@@ -432,5 +463,19 @@ public final class QuerySearchResult extends SearchPhaseResult {
 
     public float getMaxScore() {
         return maxScore;
+    }
+
+    public QuerySearchResultProto.QuerySearchResult response() {
+        return this.querySearchResult;
+    }
+
+    @Override
+    public String toString() {
+        return "QuerySearchResult [result=" + this.querySearchResult + "]";
+    }
+
+    public QuerySearchResult(QuerySearchResultProto.QuerySearchResult querySearchResult) {
+        this.querySearchResult = querySearchResult;
+        this.isNull = false;
     }
 }

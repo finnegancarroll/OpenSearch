@@ -40,8 +40,13 @@ import org.opensearch.search.SearchPhaseResult;
 import org.opensearch.search.SearchShardTarget;
 import org.opensearch.search.internal.ShardSearchContextId;
 import org.opensearch.search.query.QuerySearchResult;
+import org.opensearch.server.proto.FetchSearchResultProto;
+import org.opensearch.server.proto.ShardSearchRequestProto;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.OutputStream;
 
 /**
  * Result from a fetch
@@ -55,6 +60,8 @@ public final class FetchSearchResult extends SearchPhaseResult {
     // client side counter
     private transient int counter;
 
+    private FetchSearchResultProto.FetchSearchResult fetchSearchResultProto;
+
     public FetchSearchResult() {}
 
     public FetchSearchResult(StreamInput in) throws IOException {
@@ -65,13 +72,23 @@ public final class FetchSearchResult extends SearchPhaseResult {
 
     public FetchSearchResult(byte[] in) throws IOException {
         super(in);
-        contextId = null;
-        hits = null;
+        this.fetchSearchResultProto = FetchSearchResultProto.FetchSearchResult.parseFrom(in);
+        contextId = new ShardSearchContextId(this.fetchSearchResultProto.getContextId().getSessionId(), this.fetchSearchResultProto.getContextId().getId());
+        ByteArrayInputStream stream = new ByteArrayInputStream(this.fetchSearchResultProto.getHits().toByteArray());
+        try (ObjectInputStream is = new ObjectInputStream(stream)) {
+            hits = (SearchHits) is.readObject();
+        } catch (ClassNotFoundException | IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     public FetchSearchResult(ShardSearchContextId id, SearchShardTarget shardTarget) {
         this.contextId = id;
         setSearchShardTarget(shardTarget);
+        this.fetchSearchResultProto = FetchSearchResultProto.FetchSearchResult.newBuilder()
+                .setContextId(ShardSearchRequestProto.ShardSearchContextId.newBuilder().setSessionId(id.getSessionId()).setId(id.getId()).build())
+                .build();
     }
 
     @Override
@@ -113,5 +130,18 @@ public final class FetchSearchResult extends SearchPhaseResult {
     public void writeTo(StreamOutput out) throws IOException {
         contextId.writeTo(out);
         hits.writeTo(out);
+    }
+
+    @Override
+    public void writeTo(OutputStream out) throws IOException {
+        out.write(fetchSearchResultProto.toByteArray());
+    }
+
+    public FetchSearchResultProto.FetchSearchResult response() {
+        return this.fetchSearchResultProto;
+    }
+
+    public FetchSearchResult(FetchSearchResultProto.FetchSearchResult fetchSearchResult) {
+        this.fetchSearchResultProto = fetchSearchResult;
     }
 }

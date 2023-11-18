@@ -61,6 +61,7 @@ import org.opensearch.server.proto.NodesInfoProto.NodesInfo;
 import org.opensearch.server.proto.NodesInfoRequestProto.NodesInfoRequest;
 import org.opensearch.server.proto.NodesStatsProto.NodesStats;
 import org.opensearch.server.proto.NodesStatsRequestProto.NodesStatsRequest;
+import org.opensearch.server.proto.QueryFetchSearchResultProto.QueryFetchSearchResult;
 import org.opensearch.server.proto.MessageProto.OutboundInboundMessage;
 import org.opensearch.server.proto.ShardSearchRequestProto.ShardSearchRequest;
 import org.opensearch.core.transport.TransportResponse;
@@ -598,6 +599,20 @@ public class InboundHandler {
                 final NodesStats nodesStatsRes = receivedMessage.getNodesStatsResponse();
                 ProtobufNodeStats protobufNodeStats = new ProtobufNodeStats(nodesStatsRes);
                 final T response = (T) protobufNodeStats;
+                response.remoteAddress(new TransportAddress(remoteAddress));
+
+                final String executor = handler.executor();
+                if (ThreadPool.Names.SAME.equals(executor)) {
+                    doHandleResponse(handler, response);
+                } else {
+                    threadPool.executor(executor).execute(() -> doHandleResponse(handler, response));
+                }
+            } else if (receivedMessage.hasQueryFetchSearchResult()) {
+                System.out.println("Incoming message has the protobuf query fetch search result");
+                System.out.println("QueryFetchSearchResult: " + receivedMessage.getQueryFetchSearchResult());
+                final QueryFetchSearchResult queryFetchSearchResult = receivedMessage.getQueryFetchSearchResult();
+                org.opensearch.search.fetch.QueryFetchSearchResult queryFetchSearchResult2 = new org.opensearch.search.fetch.QueryFetchSearchResult(queryFetchSearchResult);
+                final T response = (T) queryFetchSearchResult2;
                 response.remoteAddress(new TransportAddress(remoteAddress));
 
                 final String executor = handler.executor();

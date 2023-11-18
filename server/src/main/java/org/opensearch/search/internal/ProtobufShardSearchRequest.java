@@ -216,9 +216,9 @@ public class ProtobufShardSearchRequest extends TransportRequest implements Indi
         // this.keepAlive = keepAlive;
         // assert keepAlive == null || readerId != null : "readerId: " + readerId + " keepAlive: " + keepAlive;
         
-        ShardSearchRequestProto.ShardSearchRequest.OriginalIndices originalIndicesProto = ShardSearchRequestProto.ShardSearchRequest.OriginalIndices.newBuilder()
+        ShardSearchRequestProto.OriginalIndices originalIndicesProto = ShardSearchRequestProto.OriginalIndices.newBuilder()
                         .addAllIndices(Arrays.stream(originalIndices.indices()).collect(Collectors.toList()))
-                        .setIndicesOptions(ShardSearchRequestProto.ShardSearchRequest.OriginalIndices.IndicesOptions.newBuilder()
+                        .setIndicesOptions(ShardSearchRequestProto.OriginalIndices.IndicesOptions.newBuilder()
                                                 .setIgnoreUnavailable(originalIndices.indicesOptions().ignoreUnavailable())
                                                 .setAllowNoIndices(originalIndices.indicesOptions().allowNoIndices())
                                                 .setExpandWildcardsOpen(originalIndices.indicesOptions().expandWildcardsOpen())
@@ -230,14 +230,14 @@ public class ProtobufShardSearchRequest extends TransportRequest implements Indi
                                                 .setIgnoreThrottled(originalIndices.indicesOptions().ignoreThrottled())
                                                 .build())
                         .build();
-        ShardSearchRequestProto.ShardSearchRequest.ShardId shardIdProto = ShardSearchRequestProto.ShardSearchRequest.ShardId.newBuilder()
+        ShardSearchRequestProto.ShardId shardIdProto = ShardSearchRequestProto.ShardId.newBuilder()
                         .setShardId(shardId.getId())
                         .setHashCode(shardId.hashCode())
                         .setIndexName(shardId.getIndexName())
                         .setIndexUUID(shardId.getIndex().getUUID())
                         .build();
         
-        ShardSearchRequestProto.ShardSearchRequest.ShardSearchContextId.Builder shardSearchContextId = ShardSearchRequestProto.ShardSearchRequest.ShardSearchContextId.newBuilder();
+        ShardSearchRequestProto.ShardSearchContextId.Builder shardSearchContextId = ShardSearchRequestProto.ShardSearchContextId.newBuilder();
         System.out.println("Reader id:  " + readerId);
         if (readerId != null) {
             shardSearchContextId.setSessionId(readerId.getSessionId());

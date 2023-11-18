@@ -70,8 +70,14 @@ public final class SearchExecutionStatsCollector implements ActionListener<Searc
     @Override
     public void onResponse(SearchPhaseResult response) {
         if (response instanceof QueryFetchSearchResult) {
-            response.queryResult().getShardSearchRequest().setOutboundNetworkTime(0);
-            response.queryResult().getShardSearchRequest().setInboundNetworkTime(0);
+            if (response.queryResult().getShardSearchRequest() != null) {
+                response.queryResult().getShardSearchRequest().setOutboundNetworkTime(0);
+                response.queryResult().getShardSearchRequest().setInboundNetworkTime(0);
+            } else if (response.queryResult().getProtobufShardSearchRequest() != null) {
+                response.queryResult().getProtobufShardSearchRequest().setOutboundNetworkTime(0);
+                response.queryResult().getProtobufShardSearchRequest().setInboundNetworkTime(0);
+            }
+            
         }
         QuerySearchResult queryResult = response.queryResult();
         if (response.getShardSearchRequest() != null) {
@@ -86,6 +92,18 @@ public final class SearchExecutionStatsCollector implements ActionListener<Searc
                 response.getShardSearchRequest().setOutboundNetworkTime(0);
                 response.getShardSearchRequest().setInboundNetworkTime(0);
             }
+        } else if (response.getProtobufShardSearchRequest() != null) {
+            if (response.remoteAddress() != null) {
+                // update outbound network time for request sent over network for shard requests
+                response.getProtobufShardSearchRequest()
+                    .setOutboundNetworkTime(
+                        Math.max(0, System.currentTimeMillis() - response.getShardSearchRequest().getOutboundNetworkTime())
+                    );
+            } else {
+                // reset inbound and outbound network time to 0 for local request for shard requests
+                response.getProtobufShardSearchRequest().setOutboundNetworkTime(0);
+                response.getProtobufShardSearchRequest().setInboundNetworkTime(0);
+            }  
         }
         if (nodeId != null && queryResult != null) {
             final long serviceTimeEWMA = queryResult.serviceTimeEWMA();

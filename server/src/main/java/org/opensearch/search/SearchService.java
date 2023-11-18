@@ -699,7 +699,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
                 afterQueryTime = executor.success();
             }
             if (request.numberOfShards() == 1) {
-                return executeFetchPhase(readerContext, context, afterQueryTime);
+                return executeFetchPhaseProtobuf(readerContext, context, afterQueryTime);
             } else {
                 // Pass the rescoreDocIds to the queryResult to send them the coordinating node and receive them back in the fetch phase.
                 // We also pass the rescoreDocIds to the LegacyReaderContext in case the search state needs to stay in the data node.
@@ -722,6 +722,18 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     }
 
     private QueryFetchSearchResult executeFetchPhase(ReaderContext reader, SearchContext context, long afterQueryTime) {
+        try (SearchOperationListenerExecutor executor = new SearchOperationListenerExecutor(context, true, afterQueryTime)) {
+            shortcutDocIdsToLoad(context);
+            fetchPhase.execute(context);
+            if (reader.singleSession()) {
+                freeReaderContext(reader.id());
+            }
+            executor.success();
+        }
+        return new QueryFetchSearchResult(context.queryResult(), context.fetchResult());
+    }
+
+    private QueryFetchSearchResult executeFetchPhaseProtobuf(ReaderContext reader, SearchContext context, long afterQueryTime) {
         try (SearchOperationListenerExecutor executor = new SearchOperationListenerExecutor(context, true, afterQueryTime)) {
             shortcutDocIdsToLoad(context);
             fetchPhase.execute(context);

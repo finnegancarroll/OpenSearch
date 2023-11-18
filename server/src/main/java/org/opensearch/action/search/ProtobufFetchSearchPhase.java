@@ -57,7 +57,7 @@ final class ProtobufFetchSearchPhase extends SearchPhase {
             searchPhaseController,
             aggregatedDfs,
             context,
-            (response, queryPhaseResults) -> new ExpandSearchPhase(context, response, queryPhaseResults)
+            (response, queryPhaseResults) -> new ProtobufExpandSearchPhase(context, response, queryPhaseResults)
         );
     }
 
@@ -108,7 +108,7 @@ final class ProtobufFetchSearchPhase extends SearchPhase {
 
     private void innerRun() throws Exception {
         final int numShards = context.getNumShards();
-        final boolean isScrollSearch = context.getRequest().scroll() != null;
+        final boolean isScrollSearch = context.getProtobufRequest().scroll() != null;
         final List<SearchPhaseResult> phaseResults = queryResults.asList();
         final SearchPhaseController.ReducedQueryPhase reducedQueryPhase = resultConsumer.reduce();
         final boolean queryAndFetchOptimization = queryResults.length() == 1;
@@ -249,7 +249,7 @@ final class ProtobufFetchSearchPhase extends SearchPhase {
     private void releaseIrrelevantSearchContext(QuerySearchResult queryResult) {
         // we only release search context that we did not fetch from, if we are not scrolling
         // or using a PIT and if it has at least one hit that didn't make it to the global topDocs
-        if (queryResult.hasSearchContext() && context.getRequest().scroll() == null && context.getRequest().pointInTimeBuilder() == null) {
+        if (queryResult.hasSearchContext() && context.getProtobufRequest().scroll() == null && context.getProtobufRequest().pointInTimeBuilder() == null) {
             try {
                 SearchShardTarget searchShardTarget = queryResult.getSearchShardTarget();
                 Transport.Connection connection = context.getConnection(searchShardTarget.getClusterAlias(), searchShardTarget.getNodeId());
@@ -267,7 +267,7 @@ final class ProtobufFetchSearchPhase extends SearchPhase {
         AtomicArray<? extends SearchPhaseResult> fetchResultsArr
     ) {
         final InternalSearchResponse internalResponse = searchPhaseController.merge(
-            context.getRequest().scroll() != null,
+            context.getProtobufRequest().scroll() != null,
             reducedQueryPhase,
             fetchResultsArr.asList(),
             fetchResultsArr::get

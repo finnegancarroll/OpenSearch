@@ -58,6 +58,7 @@ import org.opensearch.common.util.io.IOUtils;
 import org.opensearch.common.lease.Releasable;
 import org.opensearch.common.lease.Releasables;
 import org.opensearch.core.transport.TransportResponse;
+import org.opensearch.search.fetch.QueryFetchSearchResult;
 import org.opensearch.search.internal.ProtobufShardSearchRequest;
 import org.opensearch.threadpool.ThreadPool;
 
@@ -289,6 +290,31 @@ final class OutboundHandler {
                 action
             );
             sendProtobufMessage(channel, protobufMessage, listener);
+        } else if (canonicalName.contains("QueryFetchSearchResult")) {
+            QueryFetchSearchResult queryFetchSearchResult = (QueryFetchSearchResult) response;
+            if (queryFetchSearchResult.response() != null) {
+                System.out.println("QueryFetchSearchResult: " + queryFetchSearchResult.response());
+                byte[] bytes = new byte[1];
+                bytes[0] = 1;
+                ProtobufOutboundMessage protobufMessage = new ProtobufOutboundMessage(
+                    requestId,
+                    bytes,
+                    Version.CURRENT,
+                    threadPool.getThreadContext(),
+                    queryFetchSearchResult.response(),
+                    features,
+                    action
+                );
+                System.out.println("Outbound message for search response");
+                System.out.println(protobufMessage);
+                sendProtobufMessage(channel, protobufMessage, listener);
+            } else {
+                System.out.println("Query result");
+                System.out.println(queryFetchSearchResult.queryResult());
+                System.out.println("Fetch result");
+                System.out.println(queryFetchSearchResult.fetchResult());
+                sendMessage(channel, message, listener);
+            }     
         } else {
             sendMessage(channel, message, listener);
         }

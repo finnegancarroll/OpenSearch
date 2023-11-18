@@ -119,7 +119,7 @@ class ProtobufSearchQueryThenFetchAsyncAction extends ProtobufAbstractSearchAsyn
         QuerySearchResult queryResult = result.queryResult();
         if (queryResult.isNull() == false
             // disable sort optims for scroll requests because they keep track of the last bottom doc locally (per shard)
-            && getRequest().scroll() == null
+            && getProtobufRequest().scroll() == null
             && queryResult.topDocs() != null
             && queryResult.topDocs().topDocs.getClass() == TopFieldDocs.class) {
             TopFieldDocs topDocs = (TopFieldDocs) queryResult.topDocs().topDocs;

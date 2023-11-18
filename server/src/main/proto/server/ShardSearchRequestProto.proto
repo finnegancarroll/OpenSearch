@@ -35,37 +35,37 @@ message ShardSearchRequest {
   int64 outboundNetworkTime = 18;
   bool canReturnNullResponseIfMatchNoDocs = 19;
 
-  message OriginalIndices {
-    repeated string indices = 1;
-    IndicesOptions indicesOptions = 2;
-
-    message IndicesOptions {
-      bool ignoreUnavailable = 1;
-      bool allowNoIndices = 2;
-      bool expandWildcardsOpen = 3;
-      bool expandWildcardsClosed = 4;
-      bool expandWildcardsHidden = 5;
-      bool allowAliasesToMultipleIndices = 6;
-      bool forbidClosedIndices = 7;
-      bool ignoreAliases = 8;
-      bool ignoreThrottled = 9;
-    }
-  }
-
-  message ShardId {
-    int32 shardId = 1;
-    int32 hashCode = 2;
-    string indexName = 3;
-    string indexUUID = 4;
-  }
-
   enum SearchType {
     QUERY_THEN_FETCH = 0;
     DFS_QUERY_THEN_FETCH = 1;
   }
+}
 
-  message ShardSearchContextId {
-    string sessionId = 1;
-    int64 id = 2;
+message ShardSearchContextId {
+  string sessionId = 1;
+  int64 id = 2;
+}
+
+message ShardId {
+  int32 shardId = 1;
+  int32 hashCode = 2;
+  string indexName = 3;
+  string indexUUID = 4;
+}
+
+message OriginalIndices {
+  repeated string indices = 1;
+  IndicesOptions indicesOptions = 2;
+
+  message IndicesOptions {
+    bool ignoreUnavailable = 1;
+    bool allowNoIndices = 2;
+    bool expandWildcardsOpen = 3;
+    bool expandWildcardsClosed = 4;
+    bool expandWildcardsHidden = 5;
+    bool allowAliasesToMultipleIndices = 6;
+    bool forbidClosedIndices = 7;
+    bool ignoreAliases = 8;
+    bool ignoreThrottled = 9;
   }
 }

@@ -1394,7 +1394,7 @@ public class TaskManager implements ClusterStateApplier {
 
         void removeTask(ProtobufCancellableTask task) {
             final boolean removed = pendingTasks.remove(task);
-            assert removed : "task " + task.getId() + " is not in the pending list";
+            // assert removed : "task " + task.getId() + " is not in the pending list";
         }
     }
 

@@ -46,6 +46,7 @@ import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.rest.action.search.RestSearchAction;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -59,7 +60,7 @@ import static org.opensearch.core.xcontent.XContentParserUtils.ensureExpectedTok
  *
  * @opensearch.internal
  */
-public final class SearchHits implements Writeable, ToXContentFragment, Iterable<SearchHit> {
+public final class SearchHits implements Writeable, ToXContentFragment, Iterable<SearchHit>, Serializable {
     public static SearchHits empty() {
         return empty(true);
     }

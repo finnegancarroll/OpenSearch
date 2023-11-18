@@ -129,7 +129,7 @@ final class ProtobufCanMatchPreFilterSearchPhase extends ProtobufAbstractSearchA
             // to produce a valid search result with all the aggs etc.
             possibleMatches.set(0);
         }
-        SearchSourceBuilder source = getRequest().source();
+        SearchSourceBuilder source = getProtobufRequest().source();
         int i = 0;
         for (SearchShardIterator iter : shardsIts) {
             if (possibleMatches.get(i++)) {

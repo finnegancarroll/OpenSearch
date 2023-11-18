@@ -38,8 +38,10 @@ import org.opensearch.search.SearchPhaseResult;
 import org.opensearch.search.SearchShardTarget;
 import org.opensearch.search.internal.ShardSearchContextId;
 import org.opensearch.search.query.QuerySearchResult;
+import org.opensearch.server.proto.QueryFetchSearchResultProto;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * Query fetch result
@@ -52,6 +54,8 @@ public final class QueryFetchSearchResult extends SearchPhaseResult {
     private final QuerySearchResult queryResult;
     private final FetchSearchResult fetchResult;
 
+    private QueryFetchSearchResultProto.QueryFetchSearchResult queryFetchSearchResult;
+
     public QueryFetchSearchResult(StreamInput in) throws IOException {
         super(in);
         queryResult = new QuerySearchResult(in);
@@ -60,13 +64,22 @@ public final class QueryFetchSearchResult extends SearchPhaseResult {
 
     public QueryFetchSearchResult(byte[] in) throws IOException {
         super(in);
-        queryResult = null;
-        fetchResult = null;
+        this.queryFetchSearchResult = QueryFetchSearchResultProto.QueryFetchSearchResult.parseFrom(in);
+        queryResult = new QuerySearchResult(in);
+        fetchResult = new FetchSearchResult(in);
     }
 
     public QueryFetchSearchResult(QuerySearchResult queryResult, FetchSearchResult fetchResult) {
         this.queryResult = queryResult;
         this.fetchResult = fetchResult;
+        System.out.println("QueryResult: " + queryResult);
+        System.out.println("FetchResult: " + fetchResult);
+        if (queryResult.response() != null && fetchResult.response() != null) {
+            this.queryFetchSearchResult = QueryFetchSearchResultProto.QueryFetchSearchResult.newBuilder()
+                .setQueryResult(queryResult.response())
+                .setFetchResult(fetchResult.response())
+                .build();
+        }
     }
 
     @Override
@@ -107,5 +120,20 @@ public final class QueryFetchSearchResult extends SearchPhaseResult {
     public void writeTo(StreamOutput out) throws IOException {
         queryResult.writeTo(out);
         fetchResult.writeTo(out);
+    }
+
+    @Override
+    public void writeTo(OutputStream out) throws IOException {
+        out.write(queryFetchSearchResult.toByteArray());
+    }
+
+    public QueryFetchSearchResultProto.QueryFetchSearchResult response() {
+        return this.queryFetchSearchResult;
+    }
+
+    public QueryFetchSearchResult(QueryFetchSearchResultProto.QueryFetchSearchResult queryFetchSearchResult) {
+        this.queryFetchSearchResult = queryFetchSearchResult;
+        this.queryResult = new QuerySearchResult(queryFetchSearchResult.getQueryResult());
+        this.fetchResult = new FetchSearchResult(queryFetchSearchResult.getFetchResult());
     }
 }
