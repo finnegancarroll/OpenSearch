@@ -41,16 +41,6 @@ message QuerySearchResult {
     float maxScore = 2;
   }
 
-  message TotalHits {
-    int64 value = 1;
-    Relation relation = 2;
-
-    enum Relation {
-        EQUAL_TO = 0;
-        GREATER_THAN_OR_EQUAL_TO = 1;
-    }
-  }
-
   message TopDocs {
     TotalHits totalHits = 1;
     repeated ScoreDoc scoreDocs = 2;
@@ -70,9 +60,20 @@ message QuerySearchResult {
     }
   }
 
-  message SearchShardTarget {
-    string nodeId = 1;
-    ShardId shardId = 2;
-    string clusterAlias = 3;
+}
+
+message SearchShardTarget {
+  string nodeId = 1;
+  ShardId shardId = 2;
+  string clusterAlias = 3;
+}
+
+message TotalHits {
+  int64 value = 1;
+  Relation relation = 2;
+
+  enum Relation {
+      EQUAL_TO = 0;
+      GREATER_THAN_OR_EQUAL_TO = 1;
   }
 }

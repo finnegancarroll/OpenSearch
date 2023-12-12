@@ -234,7 +234,7 @@ public class ProtobufShardSearchRequest extends TransportRequest implements Indi
 
         if (scroll != null) {
             // TODO: Write Scroll as a proto message
-            builder.setScroll(ByteString.copyFrom(convertToBytes(scroll)));
+            builder.setScroll(ShardSearchRequestProto.Scroll.newBuilder().setKeepAlive(scroll.keepAlive().getStringRep()));
         }
         builder.setNowInMillis(nowInMillis);
 
@@ -377,13 +377,6 @@ public class ProtobufShardSearchRequest extends TransportRequest implements Indi
     }
 
     public Scroll scroll() {
-        ByteArrayInputStream in = new ByteArrayInputStream(this.shardSearchRequestProto.getScroll().toByteArray());
-        try (ObjectInputStream is = new ObjectInputStream(in)) {
-            return (Scroll) is.readObject();
-        } catch (ClassNotFoundException | IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
         return null;
     }
 

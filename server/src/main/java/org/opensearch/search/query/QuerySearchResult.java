@@ -138,7 +138,7 @@ public final class QuerySearchResult extends SearchPhaseResult {
                         .setIndexName(shardTarget.getShardId().getIndexName())
                         .setIndexUUID(shardTarget.getShardId().getIndex().getUUID())
                         .build();
-        QuerySearchResultProto.QuerySearchResult.SearchShardTarget searchShardTarget = QuerySearchResultProto.QuerySearchResult.SearchShardTarget.newBuilder()
+        QuerySearchResultProto.SearchShardTarget searchShardTarget = QuerySearchResultProto.SearchShardTarget.newBuilder()
                                                                                             .setNodeId(shardTarget.getNodeId())
                                                                                             .setShardId(shardIdProto)
                                                                                             .setClusterAlias(shardTarget.getClusterAlias())
