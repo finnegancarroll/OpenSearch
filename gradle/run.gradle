@@ -45,6 +45,12 @@ testClusters {
         plugin('plugins:'.concat(p))
       }
     }
+
+    // DEBUG SETTINGS - NO COM
+    setting 'node.search.cache.size', '100b'
+    setting 'node.roles', '[data,ingest,cluster_manager,search]'
+    setting 'path.repo', '/home/carrofin/DEBUG/STORES/SNAPS'
+    setting 'path.data', '/home/carrofin/DEBUG/STORES/DATA'
   }
 }
 
