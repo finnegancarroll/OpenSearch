@@ -380,6 +380,9 @@ class LRUCache<K, V> implements RefCountedCache<K, V> {
             iterator.remove();
             // Notify the listener only if the entry was evicted
             data.remove(node.key, node);
+
+            System.out.println("EVICTING: " + node.key.toString());
+
             usage -= node.weight;
             statsCounter.recordEviction(node.weight);
             listener.onRemoval(new RemovalNotification<>(node.key, node.value, RemovalReason.CAPACITY));

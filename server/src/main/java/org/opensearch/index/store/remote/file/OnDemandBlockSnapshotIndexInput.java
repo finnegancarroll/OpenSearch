@@ -58,6 +58,12 @@ public class OnDemandBlockSnapshotIndexInput extends OnDemandBlockIndexInput {
      */
     protected final long originalFileSize;
 
+    public OnDemandBlockSnapshotIndexInput(OnDemandBlockSnapshotIndexInput sourceObj) {
+        this(sourceObj.fileInfo, sourceObj.directory, sourceObj.transferManager);
+        // ensures that clones may be positioned at the same point as the blocked file they were cloned from
+        this.cloneBlock(sourceObj);
+    }
+
     public OnDemandBlockSnapshotIndexInput(FileInfo fileInfo, FSDirectory directory, TransferManager transferManager) {
         this(
             "BlockedSnapshotIndexInput(path=\""

@@ -20,6 +20,7 @@ import org.opensearch.Version;
 import org.opensearch.common.lucene.store.ByteArrayIndexInput;
 import org.opensearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshot;
 import org.opensearch.index.store.remote.file.OnDemandBlockSnapshotIndexInput;
+import org.opensearch.index.store.remote.file.RefTrackedOnDemandBlockSnapshotIndexInput;
 import org.opensearch.index.store.remote.utils.TransferManager;
 import org.opensearch.repositories.blobstore.BlobStoreRepository;
 
@@ -74,7 +75,8 @@ public final class RemoteSnapshotDirectory extends Directory {
         if (fileInfo.name().startsWith(VIRTUAL_FILE_PREFIX)) {
             return new ByteArrayIndexInput(fileInfo.physicalName(), fileInfo.metadata().hash().bytes);
         }
-        return new OnDemandBlockSnapshotIndexInput(fileInfo, localStoreDir, transferManager);
+
+        return new RefTrackedOnDemandBlockSnapshotIndexInput(fileInfo, localStoreDir, transferManager);
     }
 
     @Override
