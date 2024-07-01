@@ -27,6 +27,8 @@ setup:
           - '{"index": {}}'
           - '{"date": "2020-03-08", "v": 28}'
           - '{"index": {}}'
+          - '{"date": "2020-03-08", "v": 28}'
+          - '{"index": {}}'
           - '{"date": "2020-03-08", "v": 39}'
           - '{"index": {}}'
           - '{"date": "2020-03-09", "v": 4}'
@@ -41,7 +43,7 @@ setup:
             histo:
               date_histogram:
                 field: date
-                calendar_interval: month
+                calendar_interval: day
               aggs:
                 my_range:
                   range:
