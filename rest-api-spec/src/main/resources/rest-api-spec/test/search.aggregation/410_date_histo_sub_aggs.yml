@@ -1,0 +1,56 @@
+---
+setup:
+  - do:
+      indices.create:
+        index: test_date_hist_range_sub_agg
+        body:
+          settings:
+            number_of_shards: 1
+            number_of_replicas: 0
+          mappings:
+            properties:
+              date:
+                type: date
+  - do:
+      bulk:
+        refresh: true
+        index: test
+        body:
+          - '{"index": {}}'
+          - '{"date": "2020-03-01", "v": 1}'
+          - '{"index": {}}'
+          - '{"date": "2020-03-02", "v": 12}'
+          - '{"index": {}}'
+          - '{"date": "2020-03-02", "v": 12}'
+          - '{"index": {}}'
+          - '{"date": "2020-03-08", "v": 23}'
+          - '{"index": {}}'
+          - '{"date": "2020-03-08", "v": 28}'
+          - '{"index": {}}'
+          - '{"date": "2020-03-08", "v": 39}'
+          - '{"index": {}}'
+          - '{"date": "2020-03-09", "v": 4}'
+
+---
+"date_histogram with range sub aggregation":
+  - do:
+      search:
+        body:
+          size: 0
+          aggs:
+            histo:
+              date_histogram:
+                field: date
+                calendar_interval: month
+              aggs:
+                my_range:
+                  range:
+                    field: v
+                    ranges:
+                      - to: 10
+                      - from: 10
+                        to: 20
+                      - from: 20
+                        to: 30
+                      - from: 30
+                        to: 40
