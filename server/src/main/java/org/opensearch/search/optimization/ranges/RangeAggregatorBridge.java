@@ -77,6 +77,7 @@ public abstract class RangeAggregatorBridge extends AggregatorBridge {
         throws IOException {
         int size = Integer.MAX_VALUE;
 
+        // TODO: Save doc id list in each bucket, not raw doc count
         BiConsumer<Integer, Integer> incrementFunc = (activeIndex, docCount) -> {
             long ord = bucketOrdProducer().apply(activeIndex);
             incrementDocCount.accept(ord, (long) docCount);

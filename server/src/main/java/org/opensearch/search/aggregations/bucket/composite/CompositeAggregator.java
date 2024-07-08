@@ -226,7 +226,7 @@ public final class CompositeAggregator extends BucketsAggregator {
                 return segmentMatchAll(context, leaf);
             }
         });
-        if (optimizationContext.canOptimize(parent, subAggregators.length, context)) {
+        if (optimizationContext.canOptimize(parent, context)) {
             optimizationContext.prepare();
         }
     }
@@ -563,7 +563,7 @@ public final class CompositeAggregator extends BucketsAggregator {
 
     @Override
     protected LeafBucketCollector getLeafCollector(LeafReaderContext ctx, LeafBucketCollector sub) throws IOException {
-        boolean optimized = optimizationContext.tryOptimize(ctx, this::incrementBucketDocCount);
+        boolean optimized = optimizationContext.tryOptimize(ctx, sub, this::incrementBucketDocCount);
         if (optimized) throw new CollectionTerminatedException();
 
         finishLeaf();

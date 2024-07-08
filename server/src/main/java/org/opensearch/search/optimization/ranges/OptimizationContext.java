@@ -19,6 +19,7 @@ import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.util.ArrayUtil;
 import org.opensearch.common.CheckedRunnable;
 import org.opensearch.index.mapper.DocCountFieldMapper;
+import org.opensearch.search.aggregations.LeafBucketCollector;
 import org.opensearch.search.internal.SearchContext;
 
 import java.io.IOException;
@@ -58,10 +59,12 @@ public final class OptimizationContext {
         this.aggregatorBridge = aggregatorBridge;
     }
 
-    public boolean canOptimize(final Object parent, final int subAggLength, SearchContext context) {
+    public boolean canOptimize(final Object parent, SearchContext context) {
         if (context.maxAggRewriteFilters() == 0) return false;
 
-        if (parent != null || subAggLength != 0) return false;
+        // TODO: Which sub aggs can i still not support? Any? Seems like all would work as they receive the doc ids just as they normally would.
+        // if (parent != null || subAggLength != 0) return false;
+        if (parent != null) return false;
 
         boolean rewriteable = aggregatorBridge.canOptimize();
         this.rewriteable = rewriteable;
@@ -97,7 +100,7 @@ public final class OptimizationContext {
      *
      * @param incrementDocCount consume the doc_count results for certain ordinal
      */
-    public boolean tryOptimize(final LeafReaderContext leafCtx, final BiConsumer<Long, Long> incrementDocCount) throws IOException {
+    public boolean tryOptimize(final LeafReaderContext leafCtx, LeafBucketCollector sub, final BiConsumer<Long, Long> incrementDocCount) throws IOException {
         segments++;
         if (!rewriteable) {
             return false;
@@ -196,6 +199,8 @@ public final class OptimizationContext {
 
     private static class RangeCollectorForPointTree {
         private final BiConsumer<Integer, Integer> incrementRangeDocCount;
+
+        // TODO: Doc id array instead of raw counter
         private int counter = 0;
 
         private final Ranges ranges;
@@ -225,6 +230,7 @@ public final class OptimizationContext {
         }
 
         private void finalizePreviousRange() {
+            // TODO: When we finalize the range store a list of doc ids in the ordinal, not just the total count
             if (counter > 0) {
                 incrementRangeDocCount.accept(activeIndex, counter);
                 counter = 0;
@@ -301,6 +307,9 @@ public final class OptimizationContext {
 
         switch (r) {
             case CELL_INSIDE_QUERY:
+                // TODO: Send visitor to bulk collect doc ids
+                // pointTree.visitDocIDs(visitor);
+
                 collector.countNode((int) pointTree.size());
                 debug.visitInner();
                 break;
@@ -331,11 +340,17 @@ public final class OptimizationContext {
 
             @Override
             public void visit(int docID, byte[] packedValue) throws IOException {
+                // TODO: Collect dock ids
+                // visitPoints(packedValue, collector::count(docID));
+
                 visitPoints(packedValue, collector::count);
             }
 
             @Override
             public void visit(DocIdSetIterator iterator, byte[] packedValue) throws IOException {
+                // TODO: Collect dock ids
+                // collector.count(iterator.docID());
+
                 visitPoints(packedValue, () -> {
                     for (int doc = iterator.nextDoc(); doc != NO_MORE_DOCS; doc = iterator.nextDoc()) {
                         collector.count();
@@ -343,6 +358,8 @@ public final class OptimizationContext {
                 });
             }
 
+            // TODO: collect() needs to consume doc ids not just raw count
+            // TODO: refactor method to take doc ids, these need to be passed to collect()
             private void visitPoints(byte[] packedValue, CheckedRunnable<IOException> collect) throws IOException {
                 if (!collector.withinUpperBound(packedValue)) {
                     collector.finalizePreviousRange();
