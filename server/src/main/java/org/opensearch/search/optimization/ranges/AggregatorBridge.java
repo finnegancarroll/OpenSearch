@@ -11,6 +11,7 @@ package org.opensearch.search.optimization.ranges;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.PointValues;
 import org.opensearch.index.mapper.MappedFieldType;
+import org.opensearch.search.aggregations.LeafBucketCollector;
 import org.opensearch.search.optimization.ranges.OptimizationContext.Ranges;
 
 import java.io.IOException;
@@ -46,7 +47,7 @@ public abstract class AggregatorBridge {
 
     abstract Ranges buildRanges(LeafReaderContext leaf) throws IOException;
 
-    abstract void tryFastFilterAggregation(PointValues values, BiConsumer<Long, Long> incrementDocCount, Ranges ranges) throws IOException;
+    abstract void tryFastFilterAggregation(PointValues values, BiConsumer<Long, Long> incrementDocCount, Ranges ranges, final LeafBucketCollector sub) throws IOException;
 
     protected abstract Function<Object, Long> bucketOrdProducer();
 

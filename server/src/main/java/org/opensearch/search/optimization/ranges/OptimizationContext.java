@@ -17,12 +17,13 @@ import org.apache.lucene.index.PointValues;
 import org.apache.lucene.search.CollectionTerminatedException;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.util.ArrayUtil;
-import org.opensearch.common.CheckedRunnable;
 import org.opensearch.index.mapper.DocCountFieldMapper;
 import org.opensearch.search.aggregations.LeafBucketCollector;
 import org.opensearch.search.internal.SearchContext;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiConsumer;
 
 import static org.opensearch.search.optimization.ranges.Helper.loggerName;
@@ -61,9 +62,6 @@ public final class OptimizationContext {
 
     public boolean canOptimize(final Object parent, SearchContext context) {
         if (context.maxAggRewriteFilters() == 0) return false;
-
-        // TODO: Which sub aggs can i still not support? Any? Seems like all would work as they receive the doc ids just as they normally would.
-        // if (parent != null || subAggLength != 0) return false;
         if (parent != null) return false;
 
         boolean rewriteable = aggregatorBridge.canOptimize();
@@ -100,7 +98,7 @@ public final class OptimizationContext {
      *
      * @param incrementDocCount consume the doc_count results for certain ordinal
      */
-    public boolean tryOptimize(final LeafReaderContext leafCtx, LeafBucketCollector sub, final BiConsumer<Long, Long> incrementDocCount) throws IOException {
+    public boolean tryOptimize(final LeafReaderContext leafCtx, final LeafBucketCollector sub, final BiConsumer<Long, Long> incrementDocCount) throws IOException {
         segments++;
         if (!rewriteable) {
             return false;
@@ -126,7 +124,7 @@ public final class OptimizationContext {
         Ranges ranges = prepareFromSegment(leafCtx);
         if (ranges == null) return false;
 
-        aggregatorBridge.tryFastFilterAggregation(values, incrementDocCount, ranges);
+        aggregatorBridge.tryFastFilterAggregation(values, incrementDocCount, ranges, sub);
 
         optimizedSegments++;
         logger.debug("Fast filter optimization applied to shard {} segment {}", shardId, leafCtx.ord);
@@ -152,7 +150,10 @@ public final class OptimizationContext {
     }
 
     /**
-     * Internal ranges representation for the optimization
+     * Internal ranges representation for the optimization.
+     * This structure stores ranges of the aggregation in a type agnostic manner.
+     * AggregatorBridge implementations are relied on to translate their particular
+     * range implementations into the below byte array format.
      */
     final static class Ranges {
         byte[][] lowers; // inclusive
@@ -199,13 +200,9 @@ public final class OptimizationContext {
 
     private static class RangeCollectorForPointTree {
         private final BiConsumer<Integer, Integer> incrementRangeDocCount;
-
-        // TODO: Doc id array instead of raw counter
-        private int counter = 0;
-
+        private final List<Integer> DIDList = new ArrayList<>();
         private final Ranges ranges;
         private int activeIndex;
-
         private int visitedRange = 0;
         private final int maxNumNonZeroRange;
 
@@ -221,24 +218,23 @@ public final class OptimizationContext {
             this.activeIndex = activeIndex;
         }
 
-        private void count() {
-            counter++;
+        private void count(int docID) {
+            DIDList.add(docID);
         }
 
-        private void countNode(int count) {
-            counter += count;
+        private void countNode(List<Integer> docIDs) {
+            DIDList.addAll(docIDs);
         }
 
         private void finalizePreviousRange() {
-            // TODO: When we finalize the range store a list of doc ids in the ordinal, not just the total count
-            if (counter > 0) {
-                incrementRangeDocCount.accept(activeIndex, counter);
-                counter = 0;
+            if (!DIDList.isEmpty()) {
+                incrementRangeDocCount.accept(activeIndex, DIDList.size());
+                DIDList.clear();
             }
         }
 
         /**
-         * @return true when iterator exhausted or collect enough non-zero ranges
+         * @return true when iterator exhausted or collect enough non-zero ranges.
          */
         private boolean iterateRangeEnd(byte[] value) {
             // the new value may not be contiguous to the previous one
@@ -307,10 +303,7 @@ public final class OptimizationContext {
 
         switch (r) {
             case CELL_INSIDE_QUERY:
-                // TODO: Send visitor to bulk collect doc ids
-                // pointTree.visitDocIDs(visitor);
-
-                collector.countNode((int) pointTree.size());
+                pointTree.visitDocIDs(visitor);
                 debug.visitInner();
                 break;
             case CELL_CROSSES_QUERY:
@@ -340,27 +333,21 @@ public final class OptimizationContext {
 
             @Override
             public void visit(int docID, byte[] packedValue) throws IOException {
-                // TODO: Collect dock ids
-                // visitPoints(packedValue, collector::count(docID));
-
-                visitPoints(packedValue, collector::count);
+                if (canCollect(packedValue)) {
+                    collector.count(docID);
+                }
             }
 
             @Override
             public void visit(DocIdSetIterator iterator, byte[] packedValue) throws IOException {
-                // TODO: Collect dock ids
-                // collector.count(iterator.docID());
-
-                visitPoints(packedValue, () -> {
+                if (canCollect(packedValue)) {
                     for (int doc = iterator.nextDoc(); doc != NO_MORE_DOCS; doc = iterator.nextDoc()) {
-                        collector.count();
+                        collector.count(iterator.docID());
                     }
-                });
+                }
             }
 
-            // TODO: collect() needs to consume doc ids not just raw count
-            // TODO: refactor method to take doc ids, these need to be passed to collect()
-            private void visitPoints(byte[] packedValue, CheckedRunnable<IOException> collect) throws IOException {
+            private boolean canCollect(byte[] packedValue) {
                 if (!collector.withinUpperBound(packedValue)) {
                     collector.finalizePreviousRange();
                     if (collector.iterateRangeEnd(packedValue)) {
@@ -368,9 +355,7 @@ public final class OptimizationContext {
                     }
                 }
 
-                if (collector.withinRange(packedValue)) {
-                    collect.run();
-                }
+                return collector.withinRange(packedValue);
             }
 
             @Override

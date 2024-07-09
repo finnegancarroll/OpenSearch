@@ -16,6 +16,7 @@ import org.apache.lucene.search.Weight;
 import org.opensearch.common.Rounding;
 import org.opensearch.index.mapper.DateFieldMapper;
 import org.opensearch.index.mapper.MappedFieldType;
+import org.opensearch.search.aggregations.LeafBucketCollector;
 import org.opensearch.search.aggregations.bucket.composite.CompositeValuesSourceConfig;
 import org.opensearch.search.aggregations.bucket.composite.RoundingValuesSource;
 import org.opensearch.search.aggregations.bucket.histogram.LongBounds;
@@ -141,7 +142,7 @@ public abstract class DateHistogramAggregatorBridge extends AggregatorBridge {
     }
 
     @Override
-    final void tryFastFilterAggregation(PointValues values, BiConsumer<Long, Long> incrementDocCount, OptimizationContext.Ranges ranges)
+    final void tryFastFilterAggregation(PointValues values, BiConsumer<Long, Long> incrementDocCount, OptimizationContext.Ranges ranges, final LeafBucketCollector sub)
         throws IOException {
         int size = getSize();
 
@@ -151,6 +152,8 @@ public abstract class DateHistogramAggregatorBridge extends AggregatorBridge {
             rangeStart = fieldType.convertNanosToMillis(rangeStart);
             long ord = getBucketOrd(bucketOrdProducer().apply(rangeStart));
             incrementDocCount.accept(ord, (long) docCount);
+
+            // TODO: sub agg collect doc ids
         };
 
         this.optimizationContext.consumeDebugInfo(multiRangesTraverse(values.getPointTree(), ranges, incrementFunc, size));

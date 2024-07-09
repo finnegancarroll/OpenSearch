@@ -12,6 +12,7 @@ import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.PointValues;
 import org.opensearch.index.mapper.MappedFieldType;
 import org.opensearch.index.mapper.NumericPointEncoder;
+import org.opensearch.search.aggregations.LeafBucketCollector;
 import org.opensearch.search.aggregations.bucket.range.RangeAggregator;
 import org.opensearch.search.aggregations.support.ValuesSource;
 import org.opensearch.search.aggregations.support.ValuesSourceConfig;
@@ -73,11 +74,10 @@ public abstract class RangeAggregatorBridge extends AggregatorBridge {
     }
 
     @Override
-    final void tryFastFilterAggregation(PointValues values, BiConsumer<Long, Long> incrementDocCount, OptimizationContext.Ranges ranges)
+    final void tryFastFilterAggregation(PointValues values, BiConsumer<Long, Long> incrementDocCount, OptimizationContext.Ranges ranges, final LeafBucketCollector sub)
         throws IOException {
         int size = Integer.MAX_VALUE;
 
-        // TODO: Save doc id list in each bucket, not raw doc count
         BiConsumer<Integer, Integer> incrementFunc = (activeIndex, docCount) -> {
             long ord = bucketOrdProducer().apply(activeIndex);
             incrementDocCount.accept(ord, (long) docCount);
