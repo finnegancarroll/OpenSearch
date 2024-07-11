@@ -199,7 +199,7 @@ public final class OptimizationContext {
     }
 
     private static class RangeCollectorForPointTree {
-        private final BiConsumer<Integer, Integer> incrementRangeDocCount;
+        private final BiConsumer<Integer, List<Integer>> collectRangeIDs;
         private final List<Integer> DIDList = new ArrayList<>();
         private final Ranges ranges;
         private int activeIndex;
@@ -207,12 +207,12 @@ public final class OptimizationContext {
         private final int maxNumNonZeroRange;
 
         public RangeCollectorForPointTree(
-            BiConsumer<Integer, Integer> incrementRangeDocCount,
+            BiConsumer<Integer, List<Integer>> collectRangeIDs,
             int maxNumNonZeroRange,
             Ranges ranges,
             int activeIndex
         ) {
-            this.incrementRangeDocCount = incrementRangeDocCount;
+            this.collectRangeIDs = collectRangeIDs;
             this.maxNumNonZeroRange = maxNumNonZeroRange;
             this.ranges = ranges;
             this.activeIndex = activeIndex;
@@ -228,7 +228,7 @@ public final class OptimizationContext {
 
         private void finalizePreviousRange() {
             if (!DIDList.isEmpty()) {
-                incrementRangeDocCount.accept(activeIndex, DIDList.size());
+                collectRangeIDs.accept(activeIndex, DIDList);
                 DIDList.clear();
             }
         }
@@ -267,7 +267,7 @@ public final class OptimizationContext {
     static OptimizationContext.DebugInfo multiRangesTraverse(
         final PointValues.PointTree tree,
         final OptimizationContext.Ranges ranges,
-        final BiConsumer<Integer, Integer> incrementDocCount,
+        final BiConsumer<Integer, List<Integer>> collectRangeIDs,
         final int maxNumNonZeroRanges
     ) throws IOException {
         OptimizationContext.DebugInfo debugInfo = new OptimizationContext.DebugInfo();
@@ -277,7 +277,7 @@ public final class OptimizationContext {
             return debugInfo;
         }
         OptimizationContext.RangeCollectorForPointTree collector = new OptimizationContext.RangeCollectorForPointTree(
-            incrementDocCount,
+            collectRangeIDs,
             maxNumNonZeroRanges,
             ranges,
             activeIndex

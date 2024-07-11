@@ -24,6 +24,7 @@ import org.opensearch.search.aggregations.support.ValuesSourceConfig;
 import org.opensearch.search.internal.SearchContext;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.OptionalLong;
 import java.util.function.BiConsumer;
 
@@ -147,16 +148,23 @@ public abstract class DateHistogramAggregatorBridge extends AggregatorBridge {
         int size = getSize();
 
         DateFieldMapper.DateFieldType fieldType = getFieldType();
-        BiConsumer<Integer, Integer> incrementFunc = (activeIndex, docCount) -> {
+
+        BiConsumer<Integer, List<Integer>> collectRangeIDs = (activeIndex, docIDs) -> {
             long rangeStart = LongPoint.decodeDimension(ranges.lowers[activeIndex], 0);
             rangeStart = fieldType.convertNanosToMillis(rangeStart);
             long ord = getBucketOrd(bucketOrdProducer().apply(rangeStart));
-            incrementDocCount.accept(ord, (long) docCount);
+            incrementDocCount.accept(ord, (long) docIDs.size());
 
-            // TODO: sub agg collect doc ids
+            try {
+                for (int docID : docIDs) {
+                    sub.collect(docID, ord);
+                }
+            } catch ( IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
         };
 
-        this.optimizationContext.consumeDebugInfo(multiRangesTraverse(values.getPointTree(), ranges, incrementFunc, size));
+        this.optimizationContext.consumeDebugInfo(multiRangesTraverse(values.getPointTree(), ranges, collectRangeIDs, size));
     }
 
     private static long getBucketOrd(long bucketOrd) {

@@ -18,6 +18,7 @@ import org.opensearch.search.aggregations.support.ValuesSource;
 import org.opensearch.search.aggregations.support.ValuesSourceConfig;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.function.BiConsumer;
 
 import static org.opensearch.search.optimization.ranges.OptimizationContext.multiRangesTraverse;
@@ -78,11 +79,19 @@ public abstract class RangeAggregatorBridge extends AggregatorBridge {
         throws IOException {
         int size = Integer.MAX_VALUE;
 
-        BiConsumer<Integer, Integer> incrementFunc = (activeIndex, docCount) -> {
+        BiConsumer<Integer, List<Integer>> collectRangeIDs = (activeIndex, docIDs) -> {
             long ord = bucketOrdProducer().apply(activeIndex);
-            incrementDocCount.accept(ord, (long) docCount);
+            incrementDocCount.accept(ord, (long) docIDs.size());
+
+            try {
+                for (int docID : docIDs) {
+                    sub.collect(docID, activeIndex);
+                }
+            } catch ( IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
         };
 
-        this.optimizationContext.consumeDebugInfo(multiRangesTraverse(values.getPointTree(), ranges, incrementFunc, size));
+        this.optimizationContext.consumeDebugInfo(multiRangesTraverse(values.getPointTree(), ranges, collectRangeIDs, size));
     }
 }
