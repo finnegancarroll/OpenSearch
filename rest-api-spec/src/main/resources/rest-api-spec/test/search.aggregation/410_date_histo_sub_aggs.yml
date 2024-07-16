@@ -2,7 +2,7 @@
 setup:
   - do:
       indices.create:
-        index: test_date_hist_range_sub_agg
+        index: test_date_hist_sub_aggs
         body:
           settings:
             number_of_shards: 1
@@ -76,3 +76,37 @@ setup:
   - match: { aggregations.histo.buckets.0.my_range.buckets.0.doc_count: 1 }
   - match: { aggregations.histo.buckets.7.my_range.buckets.2.doc_count: 2 }
   - match: { aggregations.histo.buckets.7.my_range.buckets.1.doc_count: 1 }
+
+---
+"auto_date_histogram with range sub aggregation":
+  - do:
+      search:
+        body:
+          size: 0
+          aggs:
+            histo:
+              auto_date_histogram:
+                field: date
+                buckets: 3
+              aggs:
+                my_range:
+                  range:
+                    field: v
+                    ranges:
+                      - to: 10
+                      - from: 10
+                        to: 20
+                      - from: 20
+                        to: 30
+                      - from: 30
+                        to: 40
+
+  - match: { hits.total.value: 9 }
+  - length: { aggregations.histo.buckets: 2 }
+
+  - match: { aggregations.histo.buckets.0.doc_count: 4 }
+  - match: { aggregations.histo.buckets.1.doc_count: 5 }
+#
+#  - match: { aggregations.histo.buckets.0.my_range.buckets.0.doc_count: 1 }
+#  - match: { aggregations.histo.buckets.7.my_range.buckets.2.doc_count: 2 }
+#  - match: { aggregations.histo.buckets.7.my_range.buckets.1.doc_count: 1 }
