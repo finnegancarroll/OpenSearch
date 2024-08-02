@@ -31,7 +31,18 @@
 
 package org.opensearch.benchmark.search.aggregations;
 
-import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.TearDown;
 
 import org.apache.lucene.index.PointValues;
 import org.apache.lucene.document.Field;
@@ -47,6 +58,7 @@ import org.apache.lucene.store.FSDirectory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 
 import org.opensearch.common.logging.LogConfigurator;
@@ -56,7 +68,8 @@ import org.opensearch.index.mapper.NumericPointEncoder;
 import org.opensearch.search.optimization.filterrewrite.Ranges;
 import org.opensearch.search.optimization.filterrewrite.TreeTraversal;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
