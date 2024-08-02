@@ -124,7 +124,7 @@ public final class TreeTraversal {
             if (!ranges.withinUpperBound(minPackedValue, activeIndex) && iterateRangeEnd(minPackedValue)) {
                 throw new CollectionTerminatedException();
             }
-            
+
             // after the loop, min < upper
             // cell could be outside [min max] lower
             if (!ranges.withinLowerBound(maxPackedValue, activeIndex) && iterateRangeEnd(maxPackedValue)) {
