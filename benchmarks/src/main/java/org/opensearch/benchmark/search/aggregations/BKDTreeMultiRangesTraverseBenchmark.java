@@ -31,6 +31,22 @@
 
 package org.opensearch.benchmark.search.aggregations;
 
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.IntField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.PointValues;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+import org.opensearch.common.logging.LogConfigurator;
+import org.opensearch.index.mapper.MappedFieldType;
+import org.opensearch.index.mapper.NumberFieldMapper;
+import org.opensearch.index.mapper.NumericPointEncoder;
+import org.opensearch.search.optimization.filterrewrite.Ranges;
+import org.opensearch.search.optimization.filterrewrite.TreeTraversal;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -40,34 +56,15 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
-
-import org.apache.lucene.index.PointValues;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.IntField;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
-
-import org.opensearch.common.logging.LogConfigurator;
-import org.opensearch.index.mapper.MappedFieldType;
-import org.opensearch.index.mapper.NumberFieldMapper;
-import org.opensearch.index.mapper.NumericPointEncoder;
-import org.opensearch.search.optimization.filterrewrite.Ranges;
-import org.opensearch.search.optimization.filterrewrite.TreeTraversal;
-
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -131,7 +128,7 @@ public class BKDTreeMultiRangesTraverseBenchmark {
             MappedFieldType fieldType = new NumberFieldMapper.NumberFieldType("val", NumberFieldMapper.NumberType.INTEGER);
             NumericPointEncoder numericPointEncoder = (NumericPointEncoder) fieldType;
 
-            int bucketWidth = valMax/buckets;
+            int bucketWidth = valMax / buckets;
             byte[][] lowers = new byte[buckets][];
             byte[][] uppers = new byte[buckets][];
             for (int i = 0; i < buckets; i++) {
@@ -155,13 +152,18 @@ public class BKDTreeMultiRangesTraverseBenchmark {
     public Map<Integer, List<Integer>> multiRangeTraverseTree(treeState state) throws Exception {
         Map<Integer, List<Integer>> mockIDCollect = new HashMap<>();
 
-        TreeTraversal.RangeAwareIntersectVisitor treeVisitor = new TreeTraversal.DocCollectRangeAwareIntersectVisitor(state.pointTree, state.ranges, state.maxNumNonZeroRanges, (activeIndex, docID) -> {
-            if (mockIDCollect.containsKey(activeIndex)) {
-                mockIDCollect.get(activeIndex).add(docID);
-            } else {
-                mockIDCollect.put(activeIndex, List.of(docID));
+        TreeTraversal.RangeAwareIntersectVisitor treeVisitor = new TreeTraversal.DocCollectRangeAwareIntersectVisitor(
+            state.pointTree,
+            state.ranges,
+            state.maxNumNonZeroRanges,
+            (activeIndex, docID) -> {
+                if (mockIDCollect.containsKey(activeIndex)) {
+                    mockIDCollect.get(activeIndex).add(docID);
+                } else {
+                    mockIDCollect.put(activeIndex, List.of(docID));
+                }
             }
-        });
+        );
 
         multiRangesTraverse(treeVisitor);
         return mockIDCollect;
