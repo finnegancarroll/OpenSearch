@@ -75,27 +75,38 @@ public abstract class RangeAggregatorBridge extends AggregatorBridge {
     }
 
     @Override
-    public final void tryOptimize(PointValues values, BiConsumer<Long, Long> incrementDocCount, final LeafBucketCollector sub) throws IOException {
+    public final void tryOptimize(PointValues values, BiConsumer<Long, Long> incrementDocCount, final LeafBucketCollector sub)
+        throws IOException {
         TreeTraversal.RangeAwareIntersectVisitor treeVisitor;
         if (sub != null) {
-            treeVisitor = new TreeTraversal.DocCollectRangeAwareIntersectVisitor(values.getPointTree(), optimizationContext.getRanges(), Integer.MAX_VALUE, (activeIndex, docID) -> {
-                long ord = bucketOrdProducer().apply(activeIndex);
+            treeVisitor = new TreeTraversal.DocCollectRangeAwareIntersectVisitor(
+                values.getPointTree(),
+                optimizationContext.getRanges(),
+                Integer.MAX_VALUE,
+                (activeIndex, docID) -> {
+                    long ord = bucketOrdProducer().apply(activeIndex);
 
-                try {
-                    incrementDocCount.accept(ord, (long) 1);
-                    sub.collect(docID, ord);
-                } catch ( IOException ioe) {
-                    throw new RuntimeException(ioe);
+                    try {
+                        incrementDocCount.accept(ord, (long) 1);
+                        sub.collect(docID, ord);
+                    } catch (IOException ioe) {
+                        throw new RuntimeException(ioe);
+                    }
                 }
-            });
+            );
         } else {
-            treeVisitor = new TreeTraversal.DocCountRangeAwareIntersectVisitor(values.getPointTree(), optimizationContext.getRanges(), Integer.MAX_VALUE, (activeIndex, docCount) -> {
-                long ord = bucketOrdProducer().apply(activeIndex);
-                incrementDocCount.accept(ord, (long) docCount);
-            });
+            treeVisitor = new TreeTraversal.DocCountRangeAwareIntersectVisitor(
+                values.getPointTree(),
+                optimizationContext.getRanges(),
+                Integer.MAX_VALUE,
+                (activeIndex, docCount) -> {
+                    long ord = bucketOrdProducer().apply(activeIndex);
+                    incrementDocCount.accept(ord, (long) docCount);
+                }
+            );
         }
 
-         optimizationContext.consumeDebugInfo(multiRangesTraverse(treeVisitor));
+        optimizationContext.consumeDebugInfo(multiRangesTraverse(treeVisitor));
     }
 
     /**

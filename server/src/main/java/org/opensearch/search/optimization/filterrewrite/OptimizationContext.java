@@ -102,8 +102,12 @@ public final class OptimizationContext {
      * @param incrementDocCount consume the doc_count results for certain ordinal
      * @param segmentMatchAll if your optimization can prepareFromSegment, you should pass in this flag to decide whether to prepareFromSegment
      */
-    public boolean tryOptimize(final LeafReaderContext leafCtx, LeafBucketCollector sub, final BiConsumer<Long, Long> incrementDocCount, boolean segmentMatchAll)
-        throws IOException {
+    public boolean tryOptimize(
+        final LeafReaderContext leafCtx,
+        LeafBucketCollector sub,
+        final BiConsumer<Long, Long> incrementDocCount,
+        boolean segmentMatchAll
+    ) throws IOException {
         segments++;
         if (!canOptimize) {
             return false;

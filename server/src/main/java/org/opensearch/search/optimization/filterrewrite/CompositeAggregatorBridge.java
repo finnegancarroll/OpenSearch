@@ -17,7 +17,6 @@ import org.opensearch.search.aggregations.bucket.composite.CompositeValuesSource
 import org.opensearch.search.aggregations.bucket.composite.RoundingValuesSource;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.function.BiConsumer;
 
 import static org.opensearch.search.optimization.filterrewrite.TreeTraversal.multiRangesTraverse;
@@ -44,29 +43,40 @@ public abstract class CompositeAggregatorBridge extends DateHistogramAggregatorB
     }
 
     @Override
-    public final void tryOptimize(PointValues values, BiConsumer<Long, Long> incrementDocCount, final LeafBucketCollector sub) throws IOException {
+    public final void tryOptimize(PointValues values, BiConsumer<Long, Long> incrementDocCount, final LeafBucketCollector sub)
+        throws IOException {
         DateFieldMapper.DateFieldType fieldType = getFieldType();
         TreeTraversal.RangeAwareIntersectVisitor treeVisitor;
         if (sub != null) {
-            treeVisitor = new TreeTraversal.DocCollectRangeAwareIntersectVisitor(values.getPointTree(), optimizationContext.getRanges(), getSize(), (activeIndex, docID) -> {
-                long rangeStart = LongPoint.decodeDimension(optimizationContext.getRanges().lowers[activeIndex], 0);
-                rangeStart = fieldType.convertNanosToMillis(rangeStart);
-                long ord = getBucketOrd(bucketOrdProducer().apply(rangeStart));
+            treeVisitor = new TreeTraversal.DocCollectRangeAwareIntersectVisitor(
+                values.getPointTree(),
+                optimizationContext.getRanges(),
+                getSize(),
+                (activeIndex, docID) -> {
+                    long rangeStart = LongPoint.decodeDimension(optimizationContext.getRanges().lowers[activeIndex], 0);
+                    rangeStart = fieldType.convertNanosToMillis(rangeStart);
+                    long ord = getBucketOrd(bucketOrdProducer().apply(rangeStart));
 
-                try {
-                    incrementDocCount.accept(ord, (long) 1);
-                    sub.collect(docID, ord);
-                } catch ( IOException ioe) {
-                    throw new RuntimeException(ioe);
+                    try {
+                        incrementDocCount.accept(ord, (long) 1);
+                        sub.collect(docID, ord);
+                    } catch (IOException ioe) {
+                        throw new RuntimeException(ioe);
+                    }
                 }
-            });
+            );
         } else {
-            treeVisitor = new TreeTraversal.DocCountRangeAwareIntersectVisitor(values.getPointTree(), optimizationContext.getRanges(), getSize(), (activeIndex, docCount) -> {
-                long rangeStart = LongPoint.decodeDimension(optimizationContext.getRanges().lowers[activeIndex], 0);
-                rangeStart = fieldType.convertNanosToMillis(rangeStart);
-                long ord = getBucketOrd(bucketOrdProducer().apply(rangeStart));
-                incrementDocCount.accept(ord, (long) docCount);
-            });
+            treeVisitor = new TreeTraversal.DocCountRangeAwareIntersectVisitor(
+                values.getPointTree(),
+                optimizationContext.getRanges(),
+                getSize(),
+                (activeIndex, docCount) -> {
+                    long rangeStart = LongPoint.decodeDimension(optimizationContext.getRanges().lowers[activeIndex], 0);
+                    rangeStart = fieldType.convertNanosToMillis(rangeStart);
+                    long ord = getBucketOrd(bucketOrdProducer().apply(rangeStart));
+                    incrementDocCount.accept(ord, (long) docCount);
+                }
+            );
         }
 
         optimizationContext.consumeDebugInfo(multiRangesTraverse(treeVisitor));

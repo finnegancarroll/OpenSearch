@@ -65,11 +65,7 @@ public final class TreeTraversal {
         protected int visitedRange = 0;
         protected int activeIndex;
 
-        public RangeAwareIntersectVisitor(
-            PointValues.PointTree pointTree,
-            Ranges ranges,
-            int maxNumNonZeroRange
-        ) {
+        public RangeAwareIntersectVisitor(PointValues.PointTree pointTree, Ranges ranges, int maxNumNonZeroRange) {
             this.ranges = ranges;
             this.pointTree = pointTree;
             this.maxNumNonZeroRange = maxNumNonZeroRange;
@@ -81,9 +77,13 @@ public final class TreeTraversal {
         }
 
         public abstract void visit(int docID);
+
         public abstract void visit(int docID, byte[] packedValue);
+
         public abstract void visit(DocIdSetIterator iterator, byte[] packedValue) throws IOException;
+
         protected abstract void consumeContainedNode(PointValues.PointTree pointTree) throws IOException;
+
         protected abstract void consumeCrossedNode(PointValues.PointTree pointTree) throws IOException;
 
         public void traverse(OptimizationContext.DebugInfo debug) throws IOException {
