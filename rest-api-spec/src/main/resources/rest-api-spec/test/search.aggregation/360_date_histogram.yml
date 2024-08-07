@@ -152,3 +152,57 @@ setup:
   - match: { profile.shards.0.aggregations.0.debug.unoptimized_segments: 0 }
   - match: { profile.shards.0.aggregations.0.debug.leaf_visited: 0 }
   - match: { profile.shards.0.aggregations.0.debug.inner_visited: 0 }
+"date_histogram bucket offset over daylight savings":
+  - skip:
+      version: " - 2.16.99"
+      reason: 2.17 bug fix
+
+  - do:
+      indices.create:
+        index: dst_test
+        body:
+          mappings:
+            properties:
+              weekday:
+                type: text
+              date:
+                type: date
+
+  - do:
+      bulk:
+        index: dst_test
+        refresh: true
+        body:
+          - '{"index": {}}'
+          - '{"date": "2024-03-08", "weekday": "friday"}'
+          - '{"index": {}}'
+          - '{"date": "2024-03-09", "weekday": "saturday"}'
+          - '{"index": {}}'
+          - '{"date": "2024-03-10", "weekday": "sunday - -1d offset expected bucket start"}'
+          - '{"index": {}}'
+          - '{"date": "2016-03-11", "weekday": "monday - NO offset bucket start"}'
+          - '{"index": {}}'
+          - '{"date": "2016-03-12", "weekday": "tuesday"}'
+
+  - do:
+      search:
+        index: dst_test
+        body:
+          size: 0
+          aggs:
+            weekly_histogram:
+              date_histogram:
+                field: date
+                calendar_interval: week
+                offset: "-1d"
+                format: "yyyy-MM-dd"
+                time_zone: "America/New_York"
+
+  - match: { hits.total.value: 5 }
+  - length: { aggregations.weekly_histogram.buckets: 2 }
+
+  - match: { aggregations.weekly_histogram.buckets.0.key_as_string: "2024-03-03" }
+  - match: { aggregations.weekly_histogram.buckets.0.doc_count: 2 }
+
+  - match: { aggregations.weekly_histogram.buckets.1.key_as_string: "2024-03-10" }
+  - match: { aggregations.weekly_histogram.buckets.1.doc_count: 3 }
