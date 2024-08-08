@@ -42,8 +42,8 @@ public final class OptimizationContext {
     int maxAggRewriteFilters;
     String shardId;
 
-    private Ranges ranges;
-    private Ranges rangesFromSegment;
+    private PackedValueRanges packedValueRanges;
+    private PackedValueRanges packedValueRangesFromSegment;
 
     // debug info related fields
     private int leaf;
@@ -70,9 +70,9 @@ public final class OptimizationContext {
     }
 
     public void prepare() throws IOException {
-        assert ranges == null : "Ranges should only be built once at shard level, but they are already built";
+        assert packedValueRanges == null : "Ranges should only be built once at shard level, but they are already built";
         aggregatorBridge.prepare();
-        if (ranges != null) {
+        if (packedValueRanges != null) {
             preparedAtShardLevel = true;
         }
     }
@@ -81,17 +81,17 @@ public final class OptimizationContext {
         aggregatorBridge.prepareFromSegment(leaf);
     }
 
-    void setRanges(Ranges ranges) {
-        this.ranges = ranges;
+    void setRanges(PackedValueRanges packedValueRanges) {
+        this.packedValueRanges = packedValueRanges;
     }
 
-    void setRangesFromSegment(Ranges ranges) {
-        this.rangesFromSegment = ranges;
+    void setRangesFromSegment(PackedValueRanges packedValueRanges) {
+        this.packedValueRangesFromSegment = packedValueRanges;
     }
 
-    Ranges getRanges() {
-        if (rangesFromSegment != null) return rangesFromSegment;
-        return ranges;
+    PackedValueRanges getRanges() {
+        if (packedValueRangesFromSegment != null) return packedValueRangesFromSegment;
+        return packedValueRanges;
     }
 
     /**
@@ -130,8 +130,8 @@ public final class OptimizationContext {
             return false;
         }
 
-        Ranges ranges = tryBuildRangesFromSegment(leafCtx, segmentMatchAll);
-        if (ranges == null) return false;
+        PackedValueRanges packedValueRanges = tryBuildRangesFromSegment(leafCtx, segmentMatchAll);
+        if (packedValueRanges == null) return false;
 
         aggregatorBridge.tryOptimize(values, incrementDocCount, sub);
 
@@ -139,7 +139,7 @@ public final class OptimizationContext {
         logger.debug("Fast filter optimization applied to shard {} segment {}", shardId, leafCtx.ord);
         logger.debug("crossed leaf nodes: {}, inner nodes: {}", leaf, inner);
 
-        rangesFromSegment = null;
+        packedValueRangesFromSegment = null;
         return true;
     }
 
@@ -147,17 +147,17 @@ public final class OptimizationContext {
      * Even when ranges cannot be built at shard level, we can still build ranges
      * at segment level when it's functionally match-all at segment level
      */
-    private Ranges tryBuildRangesFromSegment(LeafReaderContext leafCtx, boolean segmentMatchAll) throws IOException {
+    private PackedValueRanges tryBuildRangesFromSegment(LeafReaderContext leafCtx, boolean segmentMatchAll) throws IOException {
         if (!preparedAtShardLevel && !segmentMatchAll) {
             return null;
         }
 
-        if (ranges == null) { // not built at shard level but segment match all
+        if (packedValueRanges == null) { // not built at shard level but segment match all
             logger.debug("Shard {} segment {} functionally match all documents. Build the fast filter", shardId, leafCtx.ord);
             prepareFromSegment(leafCtx);
-            return rangesFromSegment;
+            return packedValueRangesFromSegment;
         }
-        return ranges;
+        return packedValueRanges;
     }
 
     /**

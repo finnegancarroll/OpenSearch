@@ -13,14 +13,14 @@ import org.apache.lucene.util.ArrayUtil;
 /**
  * Internal ranges representation for the filter rewrite optimization
  */
-public final class Ranges {
+public final class PackedValueRanges {
     static ArrayUtil.ByteArrayComparator comparator;
     byte[][] lowers; // inclusive
     byte[][] uppers; // exclusive
     int size;
     int byteLen;
 
-    public Ranges(byte[][] lowers, byte[][] uppers) {
+    public PackedValueRanges(byte[][] lowers, byte[][] uppers) {
         this.lowers = lowers;
         this.uppers = uppers;
         assert lowers.length == uppers.length;
@@ -42,11 +42,11 @@ public final class Ranges {
     }
 
     public boolean withinLowerBound(byte[] value, int idx) {
-        return Ranges.withinLowerBound(value, lowers[idx]);
+        return PackedValueRanges.withinLowerBound(value, lowers[idx]);
     }
 
     public boolean withinUpperBound(byte[] value, int idx) {
-        return Ranges.withinUpperBound(value, uppers[idx]);
+        return PackedValueRanges.withinUpperBound(value, uppers[idx]);
     }
 
     public boolean withinRange(byte[] value, int idx) {

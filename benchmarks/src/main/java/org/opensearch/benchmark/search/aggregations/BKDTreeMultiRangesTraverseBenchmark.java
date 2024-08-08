@@ -45,7 +45,7 @@ import org.opensearch.common.logging.LogConfigurator;
 import org.opensearch.index.mapper.MappedFieldType;
 import org.opensearch.index.mapper.NumberFieldMapper;
 import org.opensearch.index.mapper.NumericPointEncoder;
-import org.opensearch.search.optimization.filterrewrite.Ranges;
+import org.opensearch.search.optimization.filterrewrite.PackedValueRanges;
 import org.opensearch.search.optimization.filterrewrite.TreeTraversal;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -102,7 +102,7 @@ public class BKDTreeMultiRangesTraverseBenchmark {
 
         // multiRangesTraverse params
         PointValues.PointTree pointTree;
-        Ranges ranges;
+        PackedValueRanges packedValueRanges;
         BiConsumer<Integer, List<Integer>> collectRangeIDs;
         int maxNumNonZeroRanges = Integer.MAX_VALUE;
 
@@ -136,7 +136,7 @@ public class BKDTreeMultiRangesTraverseBenchmark {
                 uppers[i] = numericPointEncoder.encodePoint(i * bucketWidth);
             }
 
-            ranges = new Ranges(lowers, uppers);
+            packedValueRanges = new PackedValueRanges(lowers, uppers);
         }
 
         @TearDown
@@ -154,7 +154,7 @@ public class BKDTreeMultiRangesTraverseBenchmark {
 
         TreeTraversal.RangeAwareIntersectVisitor treeVisitor = new TreeTraversal.DocCollectRangeAwareIntersectVisitor(
             state.pointTree,
-            state.ranges,
+            state.packedValueRanges,
             state.maxNumNonZeroRanges,
             (activeIndex, docID) -> {
                 if (mockIDCollect.containsKey(activeIndex)) {

@@ -66,7 +66,7 @@ public abstract class RangeAggregatorBridge extends AggregatorBridge {
             uppers[i] = upper;
         }
 
-        optimizationContext.setRanges(new Ranges(lowers, uppers));
+        optimizationContext.setRanges(new PackedValueRanges(lowers, uppers));
     }
 
     @Override

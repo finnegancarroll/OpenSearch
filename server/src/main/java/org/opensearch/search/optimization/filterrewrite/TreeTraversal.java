@@ -60,16 +60,16 @@ public final class TreeTraversal {
      */
     public static abstract class RangeAwareIntersectVisitor implements PointValues.IntersectVisitor {
         private final PointValues.PointTree pointTree;
-        private final Ranges ranges;
+        private final PackedValueRanges packedValueRanges;
         private final int maxNumNonZeroRange;
         protected int visitedRange = 0;
         protected int activeIndex;
 
-        public RangeAwareIntersectVisitor(PointValues.PointTree pointTree, Ranges ranges, int maxNumNonZeroRange) {
-            this.ranges = ranges;
+        public RangeAwareIntersectVisitor(PointValues.PointTree pointTree, PackedValueRanges packedValueRanges, int maxNumNonZeroRange) {
+            this.packedValueRanges = packedValueRanges;
             this.pointTree = pointTree;
             this.maxNumNonZeroRange = maxNumNonZeroRange;
-            this.activeIndex = ranges.firstRangeIndex(pointTree.getMinPackedValue(), pointTree.getMaxPackedValue());
+            this.activeIndex = packedValueRanges.firstRangeIndex(pointTree.getMinPackedValue(), pointTree.getMaxPackedValue());
         }
 
         public int getActiveIndex() {
@@ -121,17 +121,17 @@ public final class TreeTraversal {
         @Override
         public PointValues.Relation compare(byte[] minPackedValue, byte[] maxPackedValue) {
             // try to find the first range that may collect values from this cell
-            if (!ranges.withinUpperBound(minPackedValue, activeIndex) && iterateRangeEnd(minPackedValue)) {
+            if (!packedValueRanges.withinUpperBound(minPackedValue, activeIndex) && iterateRangeEnd(minPackedValue)) {
                 throw new CollectionTerminatedException();
             }
 
             // after the loop, min < upper
             // cell could be outside [min max] lower
-            if (!ranges.withinLowerBound(maxPackedValue, activeIndex) && iterateRangeEnd(maxPackedValue)) {
+            if (!packedValueRanges.withinLowerBound(maxPackedValue, activeIndex) && iterateRangeEnd(maxPackedValue)) {
                 return PointValues.Relation.CELL_OUTSIDE_QUERY;
             }
 
-            if (ranges.withinRange(minPackedValue, activeIndex) && ranges.withinRange(maxPackedValue, activeIndex)) {
+            if (packedValueRanges.withinRange(minPackedValue, activeIndex) && packedValueRanges.withinRange(maxPackedValue, activeIndex)) {
                 return PointValues.Relation.CELL_INSIDE_QUERY;
             }
             return PointValues.Relation.CELL_CROSSES_QUERY;
@@ -143,10 +143,10 @@ public final class TreeTraversal {
          * @return true when packedValue falls within the activeIndex range
          */
         protected boolean canCollect(byte[] packedValue) {
-            if (!ranges.withinUpperBound(packedValue, activeIndex) && iterateRangeEnd(packedValue)) {
+            if (!packedValueRanges.withinUpperBound(packedValue, activeIndex) && iterateRangeEnd(packedValue)) {
                 throw new CollectionTerminatedException();
             }
-            return ranges.withinRange(packedValue, activeIndex);
+            return packedValueRanges.withinRange(packedValue, activeIndex);
         }
 
         /**
@@ -156,8 +156,8 @@ public final class TreeTraversal {
         protected boolean iterateRangeEnd(byte[] packedValue) {
             // the new value may not be contiguous to the previous one
             // so try to find the first next range that cross the new value
-            while (!ranges.withinUpperBound(packedValue, activeIndex)) {
-                if (++activeIndex >= ranges.size) {
+            while (!packedValueRanges.withinUpperBound(packedValue, activeIndex)) {
+                if (++activeIndex >= packedValueRanges.size) {
                     return true;
                 }
             }
@@ -176,11 +176,11 @@ public final class TreeTraversal {
 
         public DocCountRangeAwareIntersectVisitor(
             PointValues.PointTree pointTree,
-            Ranges ranges,
+            PackedValueRanges packedValueRanges,
             int maxNumNonZeroRange,
             BiConsumer<Integer, Integer> countDocs
         ) {
-            super(pointTree, ranges, maxNumNonZeroRange);
+            super(pointTree, packedValueRanges, maxNumNonZeroRange);
             this.countDocs = countDocs;
         }
 
@@ -223,11 +223,11 @@ public final class TreeTraversal {
 
         public DocCollectRangeAwareIntersectVisitor(
             PointValues.PointTree pointTree,
-            Ranges ranges,
+            PackedValueRanges packedValueRanges,
             int maxNumNonZeroRange,
             BiConsumer<Integer, Integer> collectDocs
         ) {
-            super(pointTree, ranges, maxNumNonZeroRange);
+            super(pointTree, packedValueRanges, maxNumNonZeroRange);
             this.collectDocs = collectDocs;
         }
 

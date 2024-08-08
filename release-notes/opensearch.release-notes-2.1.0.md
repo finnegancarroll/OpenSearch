@@ -61,7 +61,7 @@
 * Update github action gradle-check to use pull_request_target for accessing token (#3728) ([#3731](https://github.com/opensearch-project/opensearch/pull/3731))
 * Add gradle check test for github workflows (#3717) ([#3723](https://github.com/opensearch-project/opensearch/pull/3723))
 * Used set to make shell scripts more strict (#3278) ([#3344](https://github.com/opensearch-project/opensearch/pull/3344))
-* Bootstrap should implement a denylist of Java versions (ranges) (#3164) ([#3292](https://github.com/opensearch-project/opensearch/pull/3292))
+* Bootstrap should implement a denylist of Java versions (packedValueRanges) (#3164) ([#3292](https://github.com/opensearch-project/opensearch/pull/3292))
 * Add Github Workflow to build and publish lucene snapshots. (#2906) ([#3038](https://github.com/opensearch-project/opensearch/pull/3038))
 * Remove JavaVersion in favour of standard Runtime.Version (java-version-checker) (#3027) ([#3034](https://github.com/opensearch-project/opensearch/pull/3034))
 * Remove JavaVersion, use builtin Runtime.Version to deal with runtime versions (#3006) ([#3013](https://github.com/opensearch-project/opensearch/pull/3013))

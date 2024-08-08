@@ -57,7 +57,7 @@ public abstract class DateHistogramAggregatorBridge extends AggregatorBridge {
         optimizationContext.setRangesFromSegment(buildRanges(bounds));
     }
 
-    private Ranges buildRanges(long[] bounds) {
+    private PackedValueRanges buildRanges(long[] bounds) {
         bounds = processHardBounds(bounds);
         if (bounds == null) {
             return null;
