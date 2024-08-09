@@ -31,6 +31,7 @@
 
 package org.opensearch.search.aggregations.bucket.histogram;
 
+import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.SortedNumericDocValues;
 import org.apache.lucene.search.CollectionTerminatedException;
@@ -167,14 +168,7 @@ abstract class AutoDateHistogramAggregator extends DeferableBucketAggregator {
             }
 
             @Override
-            public void prepare() throws IOException {
-                buildRanges(context);
-                this.ordProducer = new DateHistogramAggregatorBridge.DateHistoOrdProducer(
-                    getFieldType(),
-                    optimizationContext.getRanges(),
-                    getBucketOrds(),
-                    getRoundingPrepared());
-            }
+            public void prepare() throws IOException { buildRanges(context); }
 
             @Override
             protected Rounding getRounding(final long low, final long high) {
@@ -203,6 +197,19 @@ abstract class AutoDateHistogramAggregator extends DeferableBucketAggregator {
             @Override
             protected Prepared getRoundingPrepared() {
                 return preparedRounding;
+            }
+
+            @Override
+            protected long getOrd(int rangeIdx){
+                long rangeStart = LongPoint.decodeDimension(optimizationContext.getRanges().getLower(rangeIdx), 0);
+                rangeStart = this.getFieldType().convertNanosToMillis(rangeStart);
+                long ord = getBucketOrds().add(0, getRoundingPrepared().round(rangeStart));
+
+                if (ord < 0) { // already seen
+                    ord = -1 - ord;
+                }
+
+                return ord;
             }
         });
         if (optimizationContext.canOptimize(parent, context)) {

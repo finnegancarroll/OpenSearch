@@ -289,10 +289,7 @@ public class RangeAggregator extends BucketsAggregator {
             }
 
             @Override
-            public void prepare() {
-                buildRanges(ranges);
-                this.ordProducer = new RangeOrdProducer();
-            }
+            public void prepare() { buildRanges(ranges); }
         });
         if (optimizationContext.canOptimize(parent, context)) {
             optimizationContext.prepare();

@@ -33,36 +33,6 @@ import static org.opensearch.search.optimization.filterrewrite.TreeTraversal.mul
  * For date histogram aggregation
  */
 public abstract class DateHistogramAggregatorBridge extends AggregatorBridge {
-
-    public static class DateHistoOrdProducer extends OrdProducer {
-        DateFieldMapper.DateFieldType fieldType;
-        PackedValueRanges ranges;
-        LongKeyedBucketOrds bucketOrds;
-        Rounding.Prepared rounding;
-
-        public DateHistoOrdProducer(DateFieldMapper.DateFieldType fieldType,
-                                    PackedValueRanges ranges,
-                                    LongKeyedBucketOrds bucketOrds,
-                                    Rounding.Prepared rounding) {
-            this.fieldType = fieldType;
-            this.ranges = ranges;
-            this.bucketOrds = bucketOrds;
-            this.rounding = rounding;
-        }
-
-        long get(int idx) {
-            long rangeStart = LongPoint.decodeDimension(ranges.lowers[idx], 0);
-            rangeStart = fieldType.convertNanosToMillis(rangeStart);
-            long ord = bucketOrds.add(0, rounding.round((long) rangeStart));
-
-            if (ord < 0) { // already seen
-                ord = -1 - ord;
-            }
-
-            return ord;
-        }
-    }
-
     protected boolean canOptimize(ValuesSourceConfig config) {
         if (config.script() == null && config.missing() == null) {
             MappedFieldType fieldType = config.fieldType();

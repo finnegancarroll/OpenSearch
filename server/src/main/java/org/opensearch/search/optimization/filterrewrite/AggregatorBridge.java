@@ -42,20 +42,6 @@ public abstract class AggregatorBridge {
     OptimizationContext optimizationContext;
 
     /**
-     * Produce bucket ordinals from index of the corresponding range in the range array
-     */
-    public abstract static class OrdProducer {
-        abstract long get(int idx);
-    }
-
-    protected OrdProducer ordProducer;
-
-    public long getOrd(int rangeIdx) {
-        return ordProducer.get(rangeIdx);
-    }
-
-
-    /**
      * The field type associated with this aggregator bridge.
      */
     MappedFieldType fieldType;
@@ -87,10 +73,17 @@ public abstract class AggregatorBridge {
 
     /**
      * @return max range to stop collecting at.
-     * Utilized by aggs which stop early
+     * Utilized by aggs which stop early.
      */
     protected int rangeMax() {
         return Integer.MAX_VALUE;
+    }
+
+    /**
+     * Translate an index of the packed value range array to an agg bucket ordinal.
+     */
+    protected long getOrd(int rangeIdx){
+        return rangeIdx;
     }
 
     /**
@@ -104,6 +97,7 @@ public abstract class AggregatorBridge {
     public final void tryOptimize(PointValues values, BiConsumer<Long, Long> incrementDocCount, final LeafBucketCollector sub)
         throws IOException {
         TreeTraversal.RangeAwareIntersectVisitor treeVisitor;
+
         if (sub != null) {
             treeVisitor = new TreeTraversal.DocCollectRangeAwareIntersectVisitor(
                 values.getPointTree(),

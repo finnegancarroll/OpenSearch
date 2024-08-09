@@ -32,6 +32,7 @@
 
 package org.opensearch.search.aggregations.bucket.composite;
 
+import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.index.DocValues;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.NumericDocValues;
@@ -193,14 +194,7 @@ public final class CompositeAggregator extends BucketsAggregator {
             }
 
             @Override
-            public void prepare() throws IOException {
-                buildRanges(context);
-                this.ordProducer = new DateHistogramAggregatorBridge.DateHistoOrdProducer(
-                    getFieldType(),
-                    optimizationContext.getRanges(),
-                    bucketOrds,
-                    getRoundingPrepared());
-            }
+            public void prepare() throws IOException { buildRanges(context); }
 
             protected Rounding getRounding(final long low, final long high) {
                 return valuesSource.getRounding();
@@ -223,6 +217,19 @@ public final class CompositeAggregator extends BucketsAggregator {
             @Override
             protected int rangeMax() {
                 return size;
+            }
+
+            @Override
+            protected long getOrd(int rangeIdx){
+                long rangeStart = LongPoint.decodeDimension(optimizationContext.getRanges().getLower(rangeIdx), 0);
+                rangeStart = this.getFieldType().convertNanosToMillis(rangeStart);
+                long ord = bucketOrds.add(0, getRoundingPrepared().round(rangeStart));
+
+                if (ord < 0) { // already seen
+                    ord = -1 - ord;
+                }
+
+                return ord;
             }
         });
         if (optimizationContext.canOptimize(parent, context)) {

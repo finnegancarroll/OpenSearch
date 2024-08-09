@@ -28,12 +28,6 @@ import static org.opensearch.search.optimization.filterrewrite.TreeTraversal.mul
  */
 public abstract class RangeAggregatorBridge extends AggregatorBridge {
 
-    public static class RangeOrdProducer extends OrdProducer {
-        long get(int idx) {
-            return idx;
-        }
-    }
-
     protected boolean canOptimize(ValuesSourceConfig config, RangeAggregator.Range[] ranges) {
         if (config.fieldType() == null) return false;
         MappedFieldType fieldType = config.fieldType();
