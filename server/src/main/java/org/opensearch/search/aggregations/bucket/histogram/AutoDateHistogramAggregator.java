@@ -204,12 +204,6 @@ abstract class AutoDateHistogramAggregator extends DeferableBucketAggregator {
             protected Prepared getRoundingPrepared() {
                 return preparedRounding;
             }
-
-            @Override
-            protected LongFunction<Long> bucketOrdProducer() {
-                return (key) -> getBucketOrds().add(0, preparedRounding.round((long) key));
-            }
-
         });
         if (optimizationContext.canOptimize(parent, context)) {
             optimizationContext.prepare();
