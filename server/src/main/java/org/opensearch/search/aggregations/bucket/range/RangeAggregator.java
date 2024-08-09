@@ -291,11 +291,7 @@ public class RangeAggregator extends BucketsAggregator {
             @Override
             public void prepare() {
                 buildRanges(ranges);
-            }
-
-            @Override
-            protected LongFunction<Long> bucketOrdProducer() {
-                return (activeIndex) -> subBucketOrdinal(0, (int) activeIndex);
+                this.ordProducer = new RangeOrdProducer();
             }
         });
         if (optimizationContext.canOptimize(parent, context)) {

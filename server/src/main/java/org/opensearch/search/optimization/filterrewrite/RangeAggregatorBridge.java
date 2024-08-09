@@ -28,6 +28,12 @@ import static org.opensearch.search.optimization.filterrewrite.TreeTraversal.mul
  */
 public abstract class RangeAggregatorBridge extends AggregatorBridge {
 
+    public static class RangeOrdProducer extends OrdProducer {
+        long get(int idx) {
+            return idx;
+        }
+    }
+
     protected boolean canOptimize(ValuesSourceConfig config, RangeAggregator.Range[] ranges) {
         if (config.fieldType() == null) return false;
         MappedFieldType fieldType = config.fieldType();
@@ -72,40 +78,5 @@ public abstract class RangeAggregatorBridge extends AggregatorBridge {
     @Override
     public void prepareFromSegment(LeafReaderContext leaf) {
         throw new UnsupportedOperationException("Range aggregation should not build ranges at segment level");
-    }
-
-    @Override
-    public final void tryOptimize(PointValues values, BiConsumer<Long, Long> incrementDocCount, final LeafBucketCollector sub)
-        throws IOException {
-        TreeTraversal.RangeAwareIntersectVisitor treeVisitor;
-        if (sub != null) {
-            treeVisitor = new TreeTraversal.DocCollectRangeAwareIntersectVisitor(
-                values.getPointTree(),
-                optimizationContext.getRanges(),
-                Integer.MAX_VALUE,
-                (activeIndex, docID) -> {
-                    long ord = bucketOrdProducer().apply((long) activeIndex);
-
-                    try {
-                        incrementDocCount.accept(ord, (long) 1);
-                        sub.collect(docID, ord);
-                    } catch (IOException ioe) {
-                        throw new RuntimeException(ioe);
-                    }
-                }
-            );
-        } else {
-            treeVisitor = new TreeTraversal.DocCountRangeAwareIntersectVisitor(
-                values.getPointTree(),
-                optimizationContext.getRanges(),
-                Integer.MAX_VALUE,
-                (activeIndex, docCount) -> {
-                    long ord = bucketOrdProducer().apply((long) activeIndex);
-                    incrementDocCount.accept(ord, (long) docCount);
-                }
-            );
-        }
-
-        optimizationContext.consumeDebugInfo(multiRangesTraverse(treeVisitor));
     }
 }

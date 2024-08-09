@@ -89,7 +89,7 @@ public final class OptimizationContext {
         this.packedValueRangesFromSegment = packedValueRanges;
     }
 
-    PackedValueRanges getRanges() {
+    public PackedValueRanges getRanges() {
         if (packedValueRangesFromSegment != null) return packedValueRangesFromSegment;
         return packedValueRanges;
     }

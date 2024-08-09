@@ -18,6 +18,7 @@ import org.opensearch.index.mapper.DateFieldMapper;
 import org.opensearch.index.mapper.MappedFieldType;
 import org.opensearch.search.aggregations.LeafBucketCollector;
 import org.opensearch.search.aggregations.bucket.histogram.LongBounds;
+import org.opensearch.search.aggregations.bucket.terms.LongKeyedBucketOrds;
 import org.opensearch.search.aggregations.support.ValuesSourceConfig;
 import org.opensearch.search.internal.SearchContext;
 
@@ -32,6 +33,35 @@ import static org.opensearch.search.optimization.filterrewrite.TreeTraversal.mul
  * For date histogram aggregation
  */
 public abstract class DateHistogramAggregatorBridge extends AggregatorBridge {
+
+    public static class DateHistoOrdProducer extends OrdProducer {
+        DateFieldMapper.DateFieldType fieldType;
+        PackedValueRanges ranges;
+        LongKeyedBucketOrds bucketOrds;
+        Rounding.Prepared rounding;
+
+        public DateHistoOrdProducer(DateFieldMapper.DateFieldType fieldType,
+                                    PackedValueRanges ranges,
+                                    LongKeyedBucketOrds bucketOrds,
+                                    Rounding.Prepared rounding) {
+            this.fieldType = fieldType;
+            this.ranges = ranges;
+            this.bucketOrds = bucketOrds;
+            this.rounding = rounding;
+        }
+
+        long get(int idx) {
+            long rangeStart = LongPoint.decodeDimension(ranges.lowers[idx], 0);
+            rangeStart = fieldType.convertNanosToMillis(rangeStart);
+            long ord = bucketOrds.add(0, rounding.round((long) rangeStart));
+
+            if (ord < 0) { // already seen
+                ord = -1 - ord;
+            }
+
+            return ord;
+        }
+    }
 
     protected boolean canOptimize(ValuesSourceConfig config) {
         if (config.script() == null && config.missing() == null) {
@@ -117,58 +147,6 @@ public abstract class DateHistogramAggregatorBridge extends AggregatorBridge {
     protected DateFieldMapper.DateFieldType getFieldType() {
         assert fieldType instanceof DateFieldMapper.DateFieldType;
         return (DateFieldMapper.DateFieldType) fieldType;
-    }
-
-    protected int getSize() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-    public void tryOptimize(PointValues values, BiConsumer<Long, Long> incrementDocCount, final LeafBucketCollector sub)
-        throws IOException {
-        DateFieldMapper.DateFieldType fieldType = getFieldType();
-        TreeTraversal.RangeAwareIntersectVisitor treeVisitor;
-        if (sub != null) {
-            treeVisitor = new TreeTraversal.DocCollectRangeAwareIntersectVisitor(
-                values.getPointTree(),
-                optimizationContext.getRanges(),
-                getSize(),
-                (activeIndex, docID) -> {
-                    long rangeStart = LongPoint.decodeDimension(optimizationContext.getRanges().lowers[activeIndex], 0);
-                    rangeStart = fieldType.convertNanosToMillis(rangeStart);
-                    long ord = getBucketOrd(bucketOrdProducer().apply(rangeStart));
-
-                    try {
-                        incrementDocCount.accept(ord, (long) 1);
-                        sub.collect(docID, ord);
-                    } catch (IOException ioe) {
-                        throw new RuntimeException(ioe);
-                    }
-                }
-            );
-        } else {
-            treeVisitor = new TreeTraversal.DocCountRangeAwareIntersectVisitor(
-                values.getPointTree(),
-                optimizationContext.getRanges(),
-                getSize(),
-                (activeIndex, docCount) -> {
-                    long rangeStart = LongPoint.decodeDimension(optimizationContext.getRanges().lowers[activeIndex], 0);
-                    rangeStart = fieldType.convertNanosToMillis(rangeStart);
-                    long ord = getBucketOrd(bucketOrdProducer().apply(rangeStart));
-                    incrementDocCount.accept(ord, (long) docCount);
-                }
-            );
-        }
-
-        optimizationContext.consumeDebugInfo(multiRangesTraverse(treeVisitor));
-    }
-
-    protected static long getBucketOrd(long bucketOrd) {
-        if (bucketOrd < 0) { // already seen
-            bucketOrd = -1 - bucketOrd;
-        }
-
-        return bucketOrd;
     }
 
     /**

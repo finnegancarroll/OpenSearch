@@ -169,6 +169,11 @@ abstract class AutoDateHistogramAggregator extends DeferableBucketAggregator {
             @Override
             public void prepare() throws IOException {
                 buildRanges(context);
+                this.ordProducer = new DateHistogramAggregatorBridge.DateHistoOrdProducer(
+                    getFieldType(),
+                    optimizationContext.getRanges(),
+                    getBucketOrds(),
+                    getRoundingPrepared());
             }
 
             @Override

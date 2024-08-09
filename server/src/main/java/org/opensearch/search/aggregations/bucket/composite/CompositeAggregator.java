@@ -77,6 +77,7 @@ import org.opensearch.search.aggregations.bucket.missing.MissingOrder;
 import org.opensearch.search.aggregations.bucket.terms.LongKeyedBucketOrds;
 import org.opensearch.search.internal.SearchContext;
 import org.opensearch.search.optimization.filterrewrite.CompositeAggregatorBridge;
+import org.opensearch.search.optimization.filterrewrite.DateHistogramAggregatorBridge;
 import org.opensearch.search.optimization.filterrewrite.OptimizationContext;
 import org.opensearch.search.searchafter.SearchAfterBuilder;
 import org.opensearch.search.sort.SortAndFormats;
@@ -194,6 +195,11 @@ public final class CompositeAggregator extends BucketsAggregator {
             @Override
             public void prepare() throws IOException {
                 buildRanges(context);
+                this.ordProducer = new DateHistogramAggregatorBridge.DateHistoOrdProducer(
+                    getFieldType(),
+                    optimizationContext.getRanges(),
+                    bucketOrds,
+                    getRoundingPrepared());
             }
 
             protected Rounding getRounding(final long low, final long high) {
@@ -215,13 +221,8 @@ public final class CompositeAggregator extends BucketsAggregator {
             }
 
             @Override
-            protected int getSize() {
+            protected int rangeMax() {
                 return size;
-            }
-
-            @Override
-            protected LongFunction<Long> bucketOrdProducer() {
-                return (key) -> bucketOrds.add(0, getRoundingPrepared().round((long) key));
             }
         });
         if (optimizationContext.canOptimize(parent, context)) {

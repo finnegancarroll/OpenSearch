@@ -18,6 +18,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.LongFunction;
 
+import static org.opensearch.search.optimization.filterrewrite.TreeTraversal.multiRangesTraverse;
+
 /**
  * This interface provides a bridge between an aggregator and the optimization context, allowing
  * the aggregator to provide data and optimize the aggregation process.
@@ -38,6 +40,20 @@ public abstract class AggregatorBridge {
      * The optimization context associated with this aggregator bridge.
      */
     OptimizationContext optimizationContext;
+
+    /**
+     * Produce bucket ordinals from index of the corresponding range in the range array
+     */
+    public abstract static class OrdProducer {
+        abstract long get(int idx);
+    }
+
+    protected OrdProducer ordProducer;
+
+    public long getOrd(int rangeIdx) {
+        return ordProducer.get(rangeIdx);
+    }
+
 
     /**
      * The field type associated with this aggregator bridge.
@@ -70,16 +86,51 @@ public abstract class AggregatorBridge {
     public abstract void prepareFromSegment(LeafReaderContext leaf) throws IOException;
 
     /**
-     * Attempts to build aggregation results for a segment
+     * @return max range to stop collecting at.
+     * Utilized by aggs which stop early
+     */
+    protected int rangeMax() {
+        return Integer.MAX_VALUE;
+    }
+
+    /**
+     * Attempts to build aggregation results for a segment.
+     * With no sub agg count docs and avoid iterating docIds.
+     * If a sub agg is present we must iterate through and collect docIds to support it.
      *
      * @param values              the point values (index structure for numeric values) for a segment
      * @param incrementDocCount   a consumer to increment the document count for a range bucket. The First parameter is document count, the second is the key of the bucket
      */
-    public abstract void tryOptimize(PointValues values, BiConsumer<Long, Long> incrementDocCount, final LeafBucketCollector sub)
-        throws IOException;
+    public final void tryOptimize(PointValues values, BiConsumer<Long, Long> incrementDocCount, final LeafBucketCollector sub)
+        throws IOException {
+        TreeTraversal.RangeAwareIntersectVisitor treeVisitor;
+        if (sub != null) {
+            treeVisitor = new TreeTraversal.DocCollectRangeAwareIntersectVisitor(
+                values.getPointTree(),
+                optimizationContext.getRanges(),
+                rangeMax(),
+                (activeIndex, docID) -> {
+                    long ord = this.getOrd(activeIndex);
+                    try {
+                        incrementDocCount.accept(ord, (long) 1);
+                        sub.collect(docID, ord);
+                    } catch (IOException ioe) {
+                        throw new RuntimeException(ioe);
+                    }
+                }
+            );
+        } else {
+            treeVisitor = new TreeTraversal.DocCountRangeAwareIntersectVisitor(
+                values.getPointTree(),
+                optimizationContext.getRanges(),
+                rangeMax(),
+                (activeIndex, docCount) -> {
+                    long ord = this.getOrd(activeIndex);
+                    incrementDocCount.accept(ord, (long) docCount);
+                }
+            );
+        }
 
-    /**
-     * Provides a function to produce bucket ordinals from index of the corresponding range in the range array
-     */
-    protected abstract LongFunction<Long> bucketOrdProducer();
+        optimizationContext.consumeDebugInfo(multiRangesTraverse(treeVisitor));
+    }
 }

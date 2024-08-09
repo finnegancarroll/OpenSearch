@@ -39,6 +39,7 @@ import org.apache.lucene.util.CollectionUtil;
 import org.opensearch.common.Nullable;
 import org.opensearch.common.Rounding;
 import org.opensearch.common.lease.Releasables;
+import org.opensearch.index.mapper.DateFieldMapper;
 import org.opensearch.search.DocValueFormat;
 import org.opensearch.search.aggregations.Aggregator;
 import org.opensearch.search.aggregations.AggregatorFactories;
@@ -54,6 +55,8 @@ import org.opensearch.search.aggregations.support.ValuesSourceConfig;
 import org.opensearch.search.internal.SearchContext;
 import org.opensearch.search.optimization.filterrewrite.DateHistogramAggregatorBridge;
 import org.opensearch.search.optimization.filterrewrite.OptimizationContext;
+import org.opensearch.search.optimization.filterrewrite.PackedValueRanges;
+import org.opensearch.search.optimization.filterrewrite.RangeAggregatorBridge;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -129,6 +132,11 @@ class DateHistogramAggregator extends BucketsAggregator implements SizedBucketAg
             @Override
             public void prepare() throws IOException {
                 buildRanges(context);
+                this.ordProducer = new DateHistogramAggregatorBridge.DateHistoOrdProducer(
+                    getFieldType(),
+                    optimizationContext.getRanges(),
+                    bucketOrds,
+                    preparedRounding);
             }
 
             @Override
@@ -145,12 +153,6 @@ class DateHistogramAggregator extends BucketsAggregator implements SizedBucketAg
             protected long[] processHardBounds(long[] bounds) {
                 return super.processHardBounds(bounds, hardBounds);
             }
-
-            @Override
-            protected LongFunction<Long> bucketOrdProducer() {
-                return (key) -> bucketOrds.add(0, preparedRounding.round((long) key));
-            }
-
         });
         if (optimizationContext.canOptimize(parent, context)) {
             optimizationContext.prepare();
