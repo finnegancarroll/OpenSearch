@@ -60,6 +60,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.LongFunction;
 
 import static org.opensearch.search.optimization.filterrewrite.DateHistogramAggregatorBridge.segmentMatchAll;
 
@@ -146,7 +147,7 @@ class DateHistogramAggregator extends BucketsAggregator implements SizedBucketAg
             }
 
             @Override
-            protected Function<Long, Long> bucketOrdProducer() {
+            protected LongFunction<Long> bucketOrdProducer() {
                 return (key) -> bucketOrds.add(0, preparedRounding.round((long) key));
             }
 

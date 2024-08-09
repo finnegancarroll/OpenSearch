@@ -15,6 +15,8 @@ import org.opensearch.search.aggregations.LeafBucketCollector;
 
 import java.io.IOException;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.LongFunction;
 
 /**
  * This interface provides a bridge between an aggregator and the optimization context, allowing
@@ -75,4 +77,9 @@ public abstract class AggregatorBridge {
      */
     public abstract void tryOptimize(PointValues values, BiConsumer<Long, Long> incrementDocCount, final LeafBucketCollector sub)
         throws IOException;
+
+    /**
+     * Provides a function to produce bucket ordinals from index of the corresponding range in the range array
+     */
+    protected abstract LongFunction<Long> bucketOrdProducer();
 }

@@ -84,7 +84,7 @@ public abstract class RangeAggregatorBridge extends AggregatorBridge {
                 optimizationContext.getRanges(),
                 Integer.MAX_VALUE,
                 (activeIndex, docID) -> {
-                    long ord = bucketOrdProducer().apply(activeIndex);
+                    long ord = bucketOrdProducer().apply((long) activeIndex);
 
                     try {
                         incrementDocCount.accept(ord, (long) 1);
@@ -100,7 +100,7 @@ public abstract class RangeAggregatorBridge extends AggregatorBridge {
                 optimizationContext.getRanges(),
                 Integer.MAX_VALUE,
                 (activeIndex, docCount) -> {
-                    long ord = bucketOrdProducer().apply(activeIndex);
+                    long ord = bucketOrdProducer().apply((long) activeIndex);
                     incrementDocCount.accept(ord, (long) docCount);
                 }
             );
@@ -108,9 +108,4 @@ public abstract class RangeAggregatorBridge extends AggregatorBridge {
 
         optimizationContext.consumeDebugInfo(multiRangesTraverse(treeVisitor));
     }
-
-    /**
-     * Provides a function to produce bucket ordinals from index of the corresponding range in the range array
-     */
-    protected abstract Function<Object, Long> bucketOrdProducer();
 }

@@ -72,7 +72,7 @@ public final class TreeTraversal {
             this.activeIndex = packedValueRanges.firstRangeIndex(pointTree.getMinPackedValue(), pointTree.getMaxPackedValue());
         }
 
-        public int getActiveIndex() {
+        public long getActiveIndex() {
             return activeIndex;
         }
 

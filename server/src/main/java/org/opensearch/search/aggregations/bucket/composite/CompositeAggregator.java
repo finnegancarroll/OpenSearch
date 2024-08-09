@@ -90,6 +90,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.LongFunction;
 import java.util.function.LongUnaryOperator;
 import java.util.stream.Collectors;
 
@@ -219,7 +220,7 @@ public final class CompositeAggregator extends BucketsAggregator {
             }
 
             @Override
-            protected Function<Long, Long> bucketOrdProducer() {
+            protected LongFunction<Long> bucketOrdProducer() {
                 return (key) -> bucketOrds.add(0, getRoundingPrepared().round((long) key));
             }
         });

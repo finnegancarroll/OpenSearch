@@ -172,11 +172,6 @@ public abstract class DateHistogramAggregatorBridge extends AggregatorBridge {
     }
 
     /**
-    * Provides a function to produce bucket ordinals from the lower bound of the range
-    */
-    protected abstract Function<Long, Long> bucketOrdProducer();
-
-    /**
      * Checks whether the top level query matches all documents on the segment
      *
      * <p>This method creates a weight from the search context's query and checks whether the weight's

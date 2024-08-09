@@ -68,6 +68,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.LongFunction;
 
 import static org.opensearch.core.xcontent.ConstructingObjectParser.optionalConstructorArg;
 
@@ -293,7 +294,7 @@ public class RangeAggregator extends BucketsAggregator {
             }
 
             @Override
-            protected Function<Object, Long> bucketOrdProducer() {
+            protected LongFunction<Long> bucketOrdProducer() {
                 return (activeIndex) -> subBucketOrdinal(0, (int) activeIndex);
             }
         });
