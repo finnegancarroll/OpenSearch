@@ -11,7 +11,8 @@ package org.opensearch.search.optimization.filterrewrite;
 import org.apache.lucene.util.ArrayUtil;
 
 /**
- * Internal ranges representation for the filter rewrite optimization
+ * Packed value representation of aggregation buckets for the filter rewrite optimization.
+ * It is convenient to represent our buckets in this way while traversing PointValues.PointTree.
  */
 public final class PackedValueRanges {
     static ArrayUtil.ByteArrayComparator comparator;
