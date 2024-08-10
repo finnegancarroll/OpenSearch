@@ -14,10 +14,13 @@ import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.Weight;
 import org.opensearch.index.mapper.MappedFieldType;
 import org.opensearch.search.internal.SearchContext;
+import org.opensearch.search.aggregations.LeafBucketCollector;
 
 import java.io.IOException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+
+import static org.opensearch.search.aggregations.bucket.filterrewrite.PointTreeTraversal.multiRangesTraverse;
 
 /**
  * This interface provides a bridge between an aggregator and the optimization context, allowing
@@ -40,9 +43,9 @@ public abstract class AggregatorBridge {
      */
     MappedFieldType fieldType;
 
-    Consumer<Ranges> setRanges;
+    Consumer<PackedValueRanges> setRanges;
 
-    void setRangesConsumer(Consumer<Ranges> setRanges) {
+    void setRangesConsumer(Consumer<PackedValueRanges> setRanges) {
         this.setRanges = setRanges;
     }
 
@@ -70,20 +73,7 @@ public abstract class AggregatorBridge {
      *
      * @param leaf the leaf reader context for the segment
      */
-    abstract Ranges tryBuildRangesFromSegment(LeafReaderContext leaf) throws IOException;
-
-    /**
-     * Attempts to build aggregation results for a segment
-     *
-     * @param values            the point values (index structure for numeric values) for a segment
-     * @param incrementDocCount a consumer to increment the document count for a range bucket. The First parameter is document count, the second is the key of the bucket
-     * @param ranges
-     */
-    abstract FilterRewriteOptimizationContext.DebugInfo tryOptimize(
-        PointValues values,
-        BiConsumer<Long, Long> incrementDocCount,
-        Ranges ranges
-    ) throws IOException;
+    abstract PackedValueRanges tryBuildRangesFromSegment(LeafReaderContext leaf) throws IOException;
 
     /**
      * Checks whether the top level query matches all documents on the segment
@@ -98,5 +88,62 @@ public abstract class AggregatorBridge {
     public static boolean segmentMatchAll(SearchContext ctx, LeafReaderContext leafCtx) throws IOException {
         Weight weight = ctx.query().rewrite(ctx.searcher()).createWeight(ctx.searcher(), ScoreMode.COMPLETE_NO_SCORES, 1f);
         return weight != null && weight.count(leafCtx) == leafCtx.reader().numDocs();
+    }
+
+    /**
+     * @return max range to stop collecting at.
+     * Utilized by aggs which stop early.
+     */
+    protected int rangeMax() {
+        return Integer.MAX_VALUE;
+    }
+
+    /**
+     * Translate an index of the packed value range array to an agg bucket ordinal.
+     */
+    protected long getOrd(int rangeIdx){
+        return rangeIdx;
+    }
+
+    /**
+     * Attempts to build aggregation results for a segment.
+     * With no sub agg count docs and avoid iterating docIds.
+     * If a sub agg is present we must iterate through and collect docIds to support it.
+     *
+     * @param values              the point values (index structure for numeric values) for a segment
+     * @param incrementDocCount   a consumer to increment the document count for a range bucket. The First parameter is document count, the second is the key of the bucket
+     */
+    public final FilterRewriteOptimizationContext.DebugInfo tryOptimize(PointValues values, BiConsumer<Long, Long> incrementDocCount, PackedValueRanges ranges, final LeafBucketCollector sub)
+        throws IOException {
+        PointTreeTraversal.RangeAwareIntersectVisitor treeVisitor;
+
+        if (sub != null) {
+            treeVisitor = new PointTreeTraversal.DocCollectRangeAwareIntersectVisitor(
+                values.getPointTree(),
+                ranges,
+                rangeMax(),
+                (activeIndex, docID) -> {
+                    long ord = this.getOrd(activeIndex);
+                    try {
+                        incrementDocCount.accept(ord, (long) 1);
+                        sub.collect(docID, ord);
+                    } catch (IOException ioe) {
+                        throw new RuntimeException(ioe);
+                    }
+                }
+            );
+        } else {
+            treeVisitor = new PointTreeTraversal.DocCountRangeAwareIntersectVisitor(
+                values.getPointTree(),
+                ranges,
+                rangeMax(),
+                (activeIndex, docCount) -> {
+                    long ord = this.getOrd(activeIndex);
+                    incrementDocCount.accept(ord, (long) docCount);
+                }
+            );
+        }
+
+        return multiRangesTraverse(treeVisitor);
     }
 }
