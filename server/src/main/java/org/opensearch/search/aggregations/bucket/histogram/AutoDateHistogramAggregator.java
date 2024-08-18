@@ -56,9 +56,9 @@ import org.opensearch.search.aggregations.bucket.DeferringBucketCollector;
 import org.opensearch.search.aggregations.bucket.MergingBucketsDeferringCollector;
 import org.opensearch.search.aggregations.bucket.filterrewrite.DateHistogramAggregatorBridge;
 import org.opensearch.search.aggregations.bucket.filterrewrite.FilterRewriteOptimizationContext;
+import org.opensearch.search.aggregations.bucket.filterrewrite.PackedValueRanges;
 import org.opensearch.search.aggregations.bucket.histogram.AutoDateHistogramAggregationBuilder.RoundingInfo;
 import org.opensearch.search.aggregations.bucket.terms.LongKeyedBucketOrds;
-import org.opensearch.search.aggregations.bucket.filterrewrite.PackedValueRanges;
 import org.opensearch.search.aggregations.support.ValuesSource;
 import org.opensearch.search.aggregations.support.ValuesSourceConfig;
 import org.opensearch.search.internal.SearchContext;
@@ -203,7 +203,7 @@ abstract class AutoDateHistogramAggregator extends DeferableBucketAggregator {
 
             @Override
             protected long getOrd(int rangeIdx, PackedValueRanges ranges) {
-                assert(ranges != null);
+                assert (ranges != null);
                 long rangeStart = LongPoint.decodeDimension(ranges.getLower(rangeIdx), 0);
                 rangeStart = this.getFieldType().convertNanosToMillis(rangeStart);
                 long ord = getBucketOrds().add(0, getRoundingPrepared().round(rangeStart));

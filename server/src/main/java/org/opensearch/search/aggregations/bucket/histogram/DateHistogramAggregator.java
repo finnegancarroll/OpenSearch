@@ -148,7 +148,7 @@ class DateHistogramAggregator extends BucketsAggregator implements SizedBucketAg
 
             @Override
             protected long getOrd(int rangeIdx, PackedValueRanges ranges) {
-                assert(ranges != null);
+                assert (ranges != null);
                 long rangeStart = LongPoint.decodeDimension(ranges.getLower(rangeIdx), 0);
                 rangeStart = this.getFieldType().convertNanosToMillis(rangeStart);
                 long ord = bucketOrds.add(0, getRoundingPrepared().round(rangeStart));

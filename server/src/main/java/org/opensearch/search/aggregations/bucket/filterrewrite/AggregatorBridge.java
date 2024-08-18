@@ -13,8 +13,8 @@ import org.apache.lucene.index.PointValues;
 import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.Weight;
 import org.opensearch.index.mapper.MappedFieldType;
-import org.opensearch.search.internal.SearchContext;
 import org.opensearch.search.aggregations.LeafBucketCollector;
+import org.opensearch.search.internal.SearchContext;
 
 import java.io.IOException;
 import java.util.function.BiConsumer;
