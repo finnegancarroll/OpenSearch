@@ -570,6 +570,7 @@ public final class CompositeAggregator extends BucketsAggregator {
         boolean optimized = filterRewriteOptimizationContext.tryOptimize(
             ctx,
             this::incrementBucketDocCount,
+            subAggregators.length,
             sub,
             segmentMatchAll(context, ctx)
         );

@@ -250,6 +250,7 @@ abstract class AutoDateHistogramAggregator extends DeferableBucketAggregator {
         boolean optimized = filterRewriteOptimizationContext.tryOptimize(
             ctx,
             this::incrementBucketDocCount,
+            subAggregators.length,
             sub,
             segmentMatchAll(context, ctx)
         );

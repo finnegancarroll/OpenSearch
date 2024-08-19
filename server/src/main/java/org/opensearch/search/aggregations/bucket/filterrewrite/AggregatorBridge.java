@@ -106,12 +106,36 @@ public abstract class AggregatorBridge {
     }
 
     /**
-     * Attempts to build aggregation results for a segment.
-     * With no sub agg count docs and avoid iterating docIds.
-     * If a sub agg is present we must iterate through and collect docIds to support it.
+     * Traverse PointValues.PointTree and COUNT docs in each range.
      *
-     * @param values              the point values (index structure for numeric values) for a segment
-     * @param incrementDocCount   a consumer to increment the document count for a range bucket. The First parameter is document count, the second is the key of the bucket
+     * @param values              The point values (index structure for numeric values) for a segment.
+     * @param incrementDocCount   A consumer to increment the document count for a range bucket. The First parameter is document count, the second is the key of the bucket.
+     * @param ranges              Packed value ranges to consider when traversing point values.
+     */
+    public final FilterRewriteOptimizationContext.DebugInfo tryOptimize(
+        PointValues values,
+        BiConsumer<Long, Long> incrementDocCount,
+        PackedValueRanges ranges
+    ) throws IOException {
+        PointTreeTraversal.RangeAwareIntersectVisitor treeVisitor = new PointTreeTraversal.DocCountRangeAwareIntersectVisitor(
+            values.getPointTree(),
+            ranges,
+            rangeMax(),
+            (activeIndex, docCount) -> {
+                long ord = this.getOrd(activeIndex, ranges);
+                incrementDocCount.accept(ord, (long) docCount);
+            }
+        );
+        return multiRangesTraverse(treeVisitor);
+    }
+
+    /**
+     * Traverse PointValues.PointTree and COLLECT docs in each range.
+     *
+     * @param values              The point values (index structure for numeric values) for a segment.
+     * @param incrementDocCount   A consumer to increment the document count for a range bucket. The First parameter is document count, the second is the key of the bucket.
+     * @param ranges              Packed value ranges to consider when traversing point values.
+     * @param sub                 Sub LeafBucketCollector to collect each document visited.
      */
     public final FilterRewriteOptimizationContext.DebugInfo tryOptimize(
         PointValues values,
@@ -119,35 +143,20 @@ public abstract class AggregatorBridge {
         PackedValueRanges ranges,
         final LeafBucketCollector sub
     ) throws IOException {
-        PointTreeTraversal.RangeAwareIntersectVisitor treeVisitor;
-
-        if (sub != null) {
-            treeVisitor = new PointTreeTraversal.DocCollectRangeAwareIntersectVisitor(
-                values.getPointTree(),
-                ranges,
-                rangeMax(),
-                (activeIndex, docID) -> {
-                    long ord = this.getOrd(activeIndex, ranges);
-                    try {
-                        incrementDocCount.accept(ord, (long) 1);
-                        sub.collect(docID, ord);
-                    } catch (IOException ioe) {
-                        throw new RuntimeException(ioe);
-                    }
+        PointTreeTraversal.RangeAwareIntersectVisitor treeVisitor = new PointTreeTraversal.DocCollectRangeAwareIntersectVisitor(
+            values.getPointTree(),
+            ranges,
+            rangeMax(),
+            (activeIndex, docID) -> {
+                long ord = this.getOrd(activeIndex, ranges);
+                try {
+                    incrementDocCount.accept(ord, (long) 1);
+                    sub.collect(docID, ord);
+                } catch (IOException ioe) {
+                    throw new RuntimeException(ioe);
                 }
-            );
-        } else {
-            treeVisitor = new PointTreeTraversal.DocCountRangeAwareIntersectVisitor(
-                values.getPointTree(),
-                ranges,
-                rangeMax(),
-                (activeIndex, docCount) -> {
-                    long ord = this.getOrd(activeIndex, ranges);
-                    incrementDocCount.accept(ord, (long) docCount);
-                }
-            );
-        }
-
+            }
+        );
         return multiRangesTraverse(treeVisitor);
     }
 }

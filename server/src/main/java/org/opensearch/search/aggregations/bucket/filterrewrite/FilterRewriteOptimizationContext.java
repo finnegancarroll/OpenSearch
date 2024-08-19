@@ -92,6 +92,7 @@ public final class FilterRewriteOptimizationContext {
     public boolean tryOptimize(
         final LeafReaderContext leafCtx,
         final BiConsumer<Long, Long> incrementDocCount,
+        final int subAggLength,
         LeafBucketCollector sub,
         boolean segmentMatchAll
     ) throws IOException {
@@ -120,8 +121,14 @@ public final class FilterRewriteOptimizationContext {
         PackedValueRanges ranges = getRanges(leafCtx, segmentMatchAll);
         if (ranges == null) return false;
 
-        consumeDebugInfo(aggregatorBridge.tryOptimize(values, incrementDocCount, ranges, sub));
+        FilterRewriteOptimizationContext.DebugInfo dbgInfo;
+        if (subAggLength > 0) {
+            dbgInfo = aggregatorBridge.tryOptimize(values, incrementDocCount, ranges, sub);
+        } else {
+            dbgInfo = aggregatorBridge.tryOptimize(values, incrementDocCount, ranges);
+        }
 
+        consumeDebugInfo(dbgInfo);
         optimizedSegments.incrementAndGet();
         logger.debug("Fast filter optimization applied to shard {} segment {}", shardId, leafCtx.ord);
         logger.debug("Crossed leaf nodes: {}, inner nodes: {}", leafNodeVisited, innerNodeVisited);
