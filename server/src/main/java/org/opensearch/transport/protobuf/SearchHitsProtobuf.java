@@ -12,6 +12,8 @@ import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TotalHits;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
+import org.opensearch.core.xcontent.MediaType;
+import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.proto.search.SearchHitsProtoDef.SearchHitsProto;
 import org.opensearch.proto.search.SearchHitsProtoDef.SortFieldProto;
 import org.opensearch.proto.search.SearchHitsProtoDef.SortValueProto;
@@ -59,7 +61,15 @@ public class SearchHitsProtobuf extends SearchHits {
         fromProto(proto);
     }
 
-    SearchHitsProto toProto() {
+    @Override
+    public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+        builder.startObject(Fields.HITS);
+        builder.rawField("protobuf", toProto().toByteString().newInput(), MediaType.fromMediaType("application/octet-stream"));
+        builder.endObject();
+        return builder;
+    }
+
+    public SearchHitsProto toProto() {
         SearchHitsProto.Builder builder = SearchHitsProto.newBuilder().setMaxScore(maxScore);
 
         for (SearchHit hit : hits) {
