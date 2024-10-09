@@ -67,7 +67,7 @@ public class FetchSearchResult extends SearchPhaseResult {
     ////////////////////////////////////////////////
 
     public FetchSearchResult(StreamInput in) throws IOException {
-        System.out.println("FetchSearchResult In - PROTOBUF");
+//        System.out.println("FetchSearchResult In - PROTOBUF");
         FetchSearchResultProtoDef.FetchSearchResultProto proto = FetchSearchResultProtoDef.FetchSearchResultProto.parseFrom(in);
         hits = new SearchHitsProtobuf(proto.getHits());
     }
@@ -81,7 +81,7 @@ public class FetchSearchResult extends SearchPhaseResult {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        System.out.println("FetchSearchResult Out - PROTOBUF");
+//        System.out.println("FetchSearchResult Out - PROTOBUF");
         toProto().writeTo(out);
     }
 

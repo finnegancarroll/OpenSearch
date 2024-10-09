@@ -272,7 +272,7 @@ public class SearchHits implements Writeable, ToXContentFragment, Iterable<Searc
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        System.out.println("SearchHits.toXContent");
+//        System.out.println("SearchHits.toXContent");
 
         builder.startObject(Fields.HITS);
 
