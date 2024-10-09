@@ -59,7 +59,7 @@ public class SearchHitsProtobuf extends SearchHits {
         fromProto(proto);
     }
 
-    SearchHitsProto toProto() {
+    public SearchHitsProto toProto() {
         SearchHitsProto.Builder builder = SearchHitsProto.newBuilder().setMaxScore(maxScore);
 
         for (SearchHit hit : hits) {

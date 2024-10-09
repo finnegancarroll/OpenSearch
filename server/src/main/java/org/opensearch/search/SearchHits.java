@@ -41,10 +41,13 @@ import org.opensearch.common.lucene.Lucene;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.common.io.stream.Writeable;
+import org.opensearch.core.xcontent.MediaType;
 import org.opensearch.core.xcontent.ToXContentFragment;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.proto.search.SearchHitsProtoDef;
 import org.opensearch.rest.action.search.RestSearchAction;
+import org.opensearch.transport.protobuf.SearchHitProtobuf;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,6 +57,8 @@ import java.util.List;
 import java.util.Objects;
 
 import static org.opensearch.core.xcontent.XContentParserUtils.ensureExpectedToken;
+import static org.opensearch.transport.protobuf.ProtoSerDeHelpers.sortFieldToProto;
+import static org.opensearch.transport.protobuf.SearchHitProtobuf.sortValueToProto;
 
 /**
  * Encapsulates the results of a search operation
@@ -226,33 +231,62 @@ public class SearchHits implements Writeable, ToXContentFragment, Iterable<Searc
         public static final String MAX_SCORE = "max_score";
     }
 
+
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+
+    public SearchHitsProtoDef.SearchHitsProto toProto() {
+        SearchHitsProtoDef.SearchHitsProto.Builder builder = SearchHitsProtoDef.SearchHitsProto.newBuilder().setMaxScore(maxScore);
+
+        for (SearchHit hit : hits) {
+            builder.addHits(new SearchHitProtobuf(hit).toProto());
+        }
+
+        if (collapseField != null) {
+            builder.setCollapseField(collapseField);
+        }
+
+        if (totalHits != null) {
+            SearchHitsProtoDef.TotalHitsProto.Builder totHitsBuilder = SearchHitsProtoDef.TotalHitsProto.newBuilder()
+                .setRelation(totalHits.relation.ordinal())
+                .setValue(totalHits.value);
+            builder.setTotalHits(totHitsBuilder);
+        }
+
+        if (sortFields != null) {
+            for (SortField field : sortFields) {
+                builder.addSortFields(sortFieldToProto(field));
+            }
+        }
+
+        if (collapseValues != null) {
+            for (Object col : collapseValues) {
+                builder.addCollapseValues(sortValueToProto(col));
+            }
+        }
+
+        return builder.build();
+    }
+
+
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+        System.out.println("SearchHits.toXContent");
+
         builder.startObject(Fields.HITS);
-        boolean totalHitAsInt = params.paramAsBoolean(RestSearchAction.TOTAL_HITS_AS_INT_PARAM, false);
-        if (totalHitAsInt) {
-            long total = totalHits == null ? -1 : totalHits.value;
-            builder.field(Fields.TOTAL, total);
-        } else if (totalHits != null) {
-            builder.startObject(Fields.TOTAL);
-            builder.field("value", totalHits.value);
-            builder.field("relation", totalHits.relation == Relation.EQUAL_TO ? "eq" : "gte");
-            builder.endObject();
-        }
-        if (Float.isNaN(maxScore)) {
-            builder.nullField(Fields.MAX_SCORE);
-        } else {
-            builder.field(Fields.MAX_SCORE, maxScore);
-        }
-        builder.field(Fields.HITS);
-        builder.startArray();
-        for (SearchHit hit : hits) {
-            hit.toXContent(builder, params);
-        }
-        builder.endArray();
+
+        builder.rawField("protobuf", toProto().toByteString().newInput(), MediaType.fromMediaType("application/octet-stream"));
+
         builder.endObject();
         return builder;
     }
+
+
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+
 
     public static SearchHits fromXContent(XContentParser parser) throws IOException {
         if (parser.currentToken() != XContentParser.Token.START_OBJECT) {

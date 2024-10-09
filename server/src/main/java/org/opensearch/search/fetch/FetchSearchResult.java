@@ -35,12 +35,16 @@ package org.opensearch.search.fetch;
 import org.opensearch.common.annotation.PublicApi;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
+import org.opensearch.proto.search.fetch.FetchSearchResultProtoDef;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.SearchPhaseResult;
 import org.opensearch.search.SearchShardTarget;
 import org.opensearch.search.internal.ShardSearchContextId;
 import org.opensearch.search.query.QuerySearchResult;
+
+import org.opensearch.transport.protobuf.FetchSearchResultProtobuf;
+import org.opensearch.transport.protobuf.SearchHitsProtobuf;
 
 import java.io.IOException;
 
@@ -58,11 +62,32 @@ public class FetchSearchResult extends SearchPhaseResult {
 
     public FetchSearchResult() {}
 
+    ////////////////////////////////////////////////
+    ////////////////////////////////////////////////
+    ////////////////////////////////////////////////
+
     public FetchSearchResult(StreamInput in) throws IOException {
-        super(in);
-        contextId = new ShardSearchContextId(in);
-        hits = new SearchHits(in);
+        System.out.println("FetchSearchResult In - PROTOBUF");
+        FetchSearchResultProtoDef.FetchSearchResultProto proto = FetchSearchResultProtoDef.FetchSearchResultProto.parseFrom(in);
+        hits = new SearchHitsProtobuf(proto.getHits());
     }
+
+    FetchSearchResultProtoDef.FetchSearchResultProto toProto() {
+        FetchSearchResultProtoDef.FetchSearchResultProto.Builder builder = FetchSearchResultProtoDef.FetchSearchResultProto.newBuilder()
+            .setHits(new SearchHitsProtobuf(hits).toProto())
+            .setCounter(this.counter);
+        return builder.build();
+    }
+
+    @Override
+    public void writeTo(StreamOutput out) throws IOException {
+        System.out.println("FetchSearchResult Out - PROTOBUF");
+        toProto().writeTo(out);
+    }
+
+    ////////////////////////////////////////////////
+    ////////////////////////////////////////////////
+    ////////////////////////////////////////////////
 
     public FetchSearchResult(ShardSearchContextId id, SearchShardTarget shardTarget) {
         this.contextId = id;
@@ -102,11 +127,5 @@ public class FetchSearchResult extends SearchPhaseResult {
 
     public int counterGetAndIncrement() {
         return counter++;
-    }
-
-    @Override
-    public void writeTo(StreamOutput out) throws IOException {
-        contextId.writeTo(out);
-        hits.writeTo(out);
     }
 }

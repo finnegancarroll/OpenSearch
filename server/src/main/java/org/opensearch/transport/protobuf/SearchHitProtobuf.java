@@ -65,7 +65,7 @@ public class SearchHitProtobuf extends SearchHit {
         fromProto(proto);
     }
 
-    SearchHitProto toProto() {
+    public SearchHitProto toProto() {
         SearchHitProto.Builder builder = SearchHitProto.newBuilder()
             .setScore(score)
             .setVersion(version)
