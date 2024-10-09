@@ -36,6 +36,7 @@ import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.tests.util.TestUtil;
 import org.opensearch.action.OriginalIndices;
+import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.common.lucene.LuceneTests;
 import org.opensearch.common.xcontent.LoggingDeprecationHandler;
 import org.opensearch.common.xcontent.XContentType;
@@ -50,11 +51,41 @@ import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.test.AbstractSerializingTestCase;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.function.Predicate;
+import java.nio.file.Files;
 
 public class SearchHitsTests extends AbstractSerializingTestCase<SearchHits> {
+
+    /*
+    Hack to generate a randomized set of SearchHits objects for the purpose of benchmarking serialization ops.
+    See SearchHitsProtobufBenchmark.java.
+
+    Note: Security manager needs to be disabled.
+
+    ./gradlew server:test --tests "org.opensearch.search.SearchHitsTests.testMicroBenchmarkHackGenerateTestFiles" -Dtests.security.manager=false
+     */
+    public void testMicroBenchmarkHackGenerateTestFiles () throws IOException {
+        String WRITE_PATH = "/tmp/testFiles";
+        int TEST_FILES = 400;
+
+        Path tmp = Files.createDirectory(Paths.get(WRITE_PATH));
+        for(int i = 0; i < TEST_FILES; i++) {
+            Path pth = tmp.resolve("testItem_" + i);
+            Files.createFile(pth);
+            SearchHits sh = createTestItem(XContentType.JSON, true, true);
+
+            try (FileOutputStream out = new FileOutputStream(pth.toFile())) {
+                BytesStreamOutput bytes = new BytesStreamOutput();
+                sh.writeTo(bytes);
+                bytes.copyBytes().writeTo(out);
+            }
+        }
+    }
 
     public static SearchHits createTestItem(boolean withOptionalInnerHits, boolean withShardTarget) {
         return createTestItem(randomFrom(XContentType.values()), withOptionalInnerHits, withShardTarget);

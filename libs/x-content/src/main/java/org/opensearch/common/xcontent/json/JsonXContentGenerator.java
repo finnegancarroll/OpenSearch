@@ -352,25 +352,25 @@ public class JsonXContentGenerator implements XContentGenerator {
      */
     @Override
     public void writeRawField(String name, InputStream content, MediaType mediaType) throws IOException {
-        if (mayWriteRawData(mediaType) == false) {
-            // EMPTY is safe here because we never call namedObject when writing raw data
-            try (
-                XContentParser parser = mediaType.xContent()
-                    // It's okay to pass the throwing deprecation handler
-                    // because we should not be writing raw fields when
-                    // generating JSON
-                    .createParser(NamedXContentRegistry.EMPTY, DeprecationHandler.THROW_UNSUPPORTED_OPERATION, content)
-            ) {
-                parser.nextToken();
-                writeFieldName(name);
-                copyCurrentStructure(parser);
-            }
-        } else {
+//        if (mayWriteRawData(mediaType) == false) {
+//            // EMPTY is safe here because we never call namedObject when writing raw data
+//            try (
+//                XContentParser parser = mediaType.xContent()
+//                    // It's okay to pass the throwing deprecation handler
+//                    // because we should not be writing raw fields when
+//                    // generating JSON
+//                    .createParser(NamedXContentRegistry.EMPTY, DeprecationHandler.THROW_UNSUPPORTED_OPERATION, content)
+//            ) {
+//                parser.nextToken();
+//                writeFieldName(name);
+//                copyCurrentStructure(parser);
+//            }
+//        } else {
             writeStartRaw(name);
             flush();
             Streams.copy(content, os);
             writeEndRaw();
-        }
+//        }
     }
 
     /**
