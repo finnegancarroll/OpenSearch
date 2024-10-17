@@ -44,7 +44,7 @@ import org.opensearch.transport.protobuf.SearchHitsProtobuf;
 @State(Scope.Benchmark)
 public class SearchHitsProtobufBenchmark {
     String READ_PATH = "/tmp/testFiles";
-    int TEST_FILES = 400;
+    int TEST_FILES = 100;
 
     // Setup proto and native representations of SearchHits
     List<SearchHitsProto> searchHitsProtoItems = new ArrayList<>();
