@@ -700,16 +700,26 @@ public abstract class StreamOutput extends OutputStream {
             @SuppressWarnings("rawtypes")
             final List list = (List) v;
             o.writeVInt(list.size());
+
+            Writer<Object> writer = null;
             for (Object item : list) {
-                o.writeGenericValue(item);
+                if (writer == null) {
+                    writer = getWriter(getGenericType(item));
+                }
+                o.writeKnownValue(item, writer);
             }
         });
         writers.put(Object[].class, (o, v) -> {
             o.writeByte((byte) 8);
             final Object[] list = (Object[]) v;
             o.writeVInt(list.length);
+
+            Writer<Object> writer = null;
             for (Object item : list) {
-                o.writeGenericValue(item);
+                if (writer == null) {
+                    writer = getWriter(getGenericType(item));
+                }
+                o.writeKnownValue(item, writer);
             }
         });
         writers.put(Map.class, (o, v) -> {
@@ -778,7 +788,14 @@ public abstract class StreamOutput extends OutputStream {
             } else {
                 o.writeByte((byte) 25);
             }
-            o.writeCollection((Set<?>) v, StreamOutput::writeGenericValue);
+
+            Writer<Object> writer = null;
+            for (Object e : (Set<?>) v) {
+                if (writer == null) {
+                    writer = getWriter(getGenericType(e));
+                }
+                o.writeKnownValue(e, writer);
+            }
         });
         // TODO: improve serialization of BigInteger
         writers.put(BigInteger.class, (o, v) -> {
@@ -841,6 +858,14 @@ public abstract class StreamOutput extends OutputStream {
         }
         final Class<?> type = getGenericType(value);
         final Writer<Object> writer = getWriter(type);
+        writer.write(this, value);
+    }
+
+    public void writeKnownValue(@Nullable Object value, Writer<Object> writer) throws IOException {
+        if (value == null) {
+            writeByte((byte) -1);
+            return;
+        }
         writer.write(this, value);
     }
 
