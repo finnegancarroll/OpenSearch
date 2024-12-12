@@ -1,0 +1,73 @@
+import org.gradle.api.attributes.java.TargetJvmEnvironment
+
+/*
+ 'SPDX-License-Identifier: Apache-2.0
+ *
+ 'The OpenSearch Contributors require contributions made to
+ 'this file be licensed under the Apache-2.0 license or a
+ 'compatible open source license.
+ */
+
+opensearchplugin {
+  description 'Min example debug plugin'
+  classname 'org.opensearch.transport.grpc.GrpcModulePlugin'
+}
+
+tasks.named("dependencyLicenses").configure {
+  mapping from: /grpc-.*/, to: 'grpc'
+  mapping from: /guava-.*/, to: 'guava'
+}
+
+dependencies {
+  implementation "io.grpc:grpc-netty-shaded:${versions.grpc}"
+  implementation "com.google.guava:guava:${versions.guava}"
+}
+
+thirdPartyAudit {
+  ignoreMissingClasses()
+
+  ignoreViolations(
+    // grpc
+    'io.grpc.netty.shaded.io.netty.handler.ssl.util.OpenJdkSelfSignedCertGenerator',
+    'io.grpc.netty.shaded.io.netty.handler.ssl.util.OpenJdkSelfSignedCertGenerator$1',
+    'io.grpc.netty.shaded.io.netty.handler.ssl.util.OpenJdkSelfSignedCertGenerator$2',
+    'io.grpc.netty.shaded.io.netty.handler.ssl.util.OpenJdkSelfSignedCertGenerator$3',
+    'io.grpc.netty.shaded.io.netty.handler.ssl.util.OpenJdkSelfSignedCertGenerator$4',
+    'io.grpc.netty.shaded.io.netty.handler.ssl.util.OpenJdkSelfSignedCertGenerator$5',
+    'io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent0',
+    'io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent0$1',
+    'io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent0$2',
+    'io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent0$3',
+    'io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent0$4',
+    'io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent0$6',
+    'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseLinkedQueueConsumerNodeRef',
+    'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseLinkedQueueProducerNodeRef',
+    'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueColdProducerFields',
+    'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueConsumerFields',
+    'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueProducerFields',
+    'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.LinkedQueueNode',
+    'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpmcArrayQueueConsumerIndexField',
+    'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpmcArrayQueueProducerIndexField',
+    'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueConsumerIndexField',
+    'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueProducerIndexField',
+    'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueProducerLimitField',
+    'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.util.UnsafeAccess',
+    'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.util.UnsafeLongArrayAccess',
+    'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.util.UnsafeRefArrayAccess',
+
+    // guava
+    'com.google.common.cache.Striped64',
+    'com.google.common.cache.Striped64$1',
+    'com.google.common.cache.Striped64$Cell',
+    'com.google.common.hash.LittleEndianByteArray$UnsafeByteArray',
+    'com.google.common.hash.LittleEndianByteArray$UnsafeByteArray$1',
+    'com.google.common.hash.LittleEndianByteArray$UnsafeByteArray$2',
+    'com.google.common.hash.Striped64',
+    'com.google.common.hash.Striped64$1',
+    'com.google.common.hash.Striped64$Cell',
+    'com.google.common.primitives.UnsignedBytes$LexicographicalComparatorHolder$UnsafeComparator',
+    'com.google.common.primitives.UnsignedBytes$LexicographicalComparatorHolder$UnsafeComparator$1',
+    'com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper',
+    'com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper$1'
+  )
+}
