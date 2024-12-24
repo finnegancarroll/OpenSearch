@@ -48,6 +48,16 @@ public class ThirdPartyAuditTaskIT extends GradleIntegrationTestCase {
         setupJarJdkClasspath(getProjectDir("thirdPartyAudit"));
     }
 
+    public void testJarMetadataUnpackCollision() {
+        BuildResult result = getGradleRunner("thirdPartyAudit").withArguments(
+            ":clean",
+            ":empty",
+            "-s",
+            "-PcompileGroup=other.gradle:force-collision",
+            "-PcompileVersion=0.0.1"
+        ).build();
+    }
+
     public void testOpenSearchIgnored() {
         BuildResult result = getGradleRunner("thirdPartyAudit").withArguments(
             ":clean",

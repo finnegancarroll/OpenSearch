@@ -51,6 +51,39 @@ dependencies {
   }
 }
 
+// Must configure a single task for these test jars to ensure they are unzipped to the same directory
+tasks.register("force-collision", Jar) {
+  destinationDirectory = file("${buildDir}/testrepo/org/other/gradle/collision-test/0.0.1/")
+
+  doFirst {
+    def destDir = destinationDirectory.get().asFile
+    destDir.mkdirs()
+
+    // Create temporary directories for building the jars
+    def tempDir1 = new File(temporaryDir, "jar1")
+    def tempDir2 = new File(temporaryDir, "jar2")  // Fixed typo here
+
+    // Setup first jar with LICENSE file
+    def metaInf1 = new File(tempDir1, "META-INF")
+    metaInf1.mkdirs()
+    new File(metaInf1, "LICENSE").text = "Test License Content"
+
+    // Setup second jar with LICENSE directory
+    def metaInf2 = new File(tempDir2, "META-INF/LICENSE")
+    metaInf2.mkdirs()
+    new File(metaInf2, "content.txt").text = "Test Content"
+
+    // Create the actual jar files
+    ant.jar(destfile: new File(destDir, "dummy-license-file.jar")) {
+      fileset(dir: tempDir1)
+    }
+
+    ant.jar(destfile: new File(destDir, "dummy-license-dir.jar")) {
+      fileset(dir: tempDir2)
+    }
+  }
+}
+
 tasks.register("jarhellJdk", Jar) {
   destinationDirectory = file("${buildDir}/testrepo/org/other/gradle/jarhellJdk/0.0.1/")
   archiveFileName = "jarhellJdk-0.0.1.jar"
@@ -58,4 +91,5 @@ tasks.register("jarhellJdk", Jar) {
   include "**/String.class"
   into "java/lang"
 }
-build.dependsOn("jarhellJdk")
+
+build.dependsOn("jarhellJdk", "force-collision")
