@@ -21,6 +21,7 @@ import org.opensearch.env.NodeEnvironment;
 import org.opensearch.plugin.transport.grpc.services.DocumentServiceImpl;
 import org.opensearch.plugins.NetworkPlugin;
 import org.opensearch.plugins.Plugin;
+import org.opensearch.plugins.SecureAuxTransportSettingsProvider;
 import org.opensearch.repositories.RepositoriesService;
 import org.opensearch.script.ScriptService;
 import org.opensearch.telemetry.tracing.Tracer;
@@ -84,6 +85,41 @@ public final class GrpcPlugin extends Plugin implements NetworkPlugin {
         return Collections.singletonMap(
             GRPC_TRANSPORT_SETTING_KEY,
             () -> new Netty4GrpcServerTransport(settings, grpcServices, networkService)
+        );
+    }
+
+    /**
+     * Provides secure auxiliary transports for the plugin.
+     * Registered under a distinct key from gRPC transport.
+     * Consumes pluggable security settings as provided by a SecureAuxTransportSettingsProvider.
+     *
+     * @param settings The node settings
+     * @param threadPool The thread pool
+     * @param circuitBreakerService The circuit breaker service
+     * @param networkService The network service
+     * @param clusterSettings The cluster settings
+     * @param tracer The tracer
+     * @param secureAuxTransportSettingsProvider provides ssl context params
+     * @return A map of transport names to transport suppliers
+     */
+    @Override
+    public Map<String, Supplier<AuxTransport>> getSecureAuxTransports(
+        Settings settings,
+        ThreadPool threadPool,
+        CircuitBreakerService circuitBreakerService,
+        NetworkService networkService,
+        ClusterSettings clusterSettings,
+        SecureAuxTransportSettingsProvider secureAuxTransportSettingsProvider,
+        Tracer tracer
+    ) {
+        return Collections.singletonMap(
+            GRPC_TRANSPORT_SETTING_KEY,
+            () -> new SecureNetty4GrpcServerTransport(
+                settings,
+                Collections.emptyList(),
+                networkService,
+                secureAuxTransportSettingsProvider
+            )
         );
     }
 
