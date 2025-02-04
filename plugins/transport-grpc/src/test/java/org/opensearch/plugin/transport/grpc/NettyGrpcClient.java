@@ -6,7 +6,7 @@
  * compatible open source license.
  */
 
-package org.opensearch.transport.grpc;
+package org.opensearch.plugin.transport.grpc;
 
 import io.grpc.ManagedChannel;
 import io.grpc.health.v1.HealthCheckRequest;
