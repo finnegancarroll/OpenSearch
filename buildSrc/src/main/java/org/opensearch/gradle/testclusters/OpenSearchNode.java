@@ -118,6 +118,7 @@ public class OpenSearchNode implements TestClusterConfiguration {
     private static final TimeUnit ADDITIONAL_CONFIG_TIMEOUT_UNIT = TimeUnit.SECONDS;
     private static final List<String> OVERRIDABLE_SETTINGS = Arrays.asList(
         "path.repo",
+        "path.data",
         "discovery.seed_providers",
         "discovery.seed_hosts",
         "indices.breaker.total.use_real_memory"

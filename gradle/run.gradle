@@ -45,6 +45,9 @@ testClusters {
         plugin('plugins:'.concat(p))
       }
     }
+
+    setting 'path.repo', '/home/ubuntu/data/snaps'
+    setting 'path.data', '/home/ubuntu/data/idx'
   }
 }
 
