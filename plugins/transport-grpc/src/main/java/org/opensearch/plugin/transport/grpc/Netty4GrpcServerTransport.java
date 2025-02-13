@@ -218,7 +218,7 @@ public class Netty4GrpcServerTransport extends NetworkPlugin.AuxTransport {
      */
     @Override
     protected void doClose() {
-
+        eventLoopGroup.close();
     }
 
     private void bindServer() {
