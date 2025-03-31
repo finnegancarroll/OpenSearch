@@ -44,8 +44,7 @@ public class BulkRequestProtoUtils {
     public static org.opensearch.action.bulk.BulkRequest prepareRequest(BulkRequest request) throws IOException {
         org.opensearch.action.bulk.BulkRequest bulkRequest = Requests.bulkRequest();
 
-        // String defaultIndex = request.hasIndex() ? request.getIndex() : null;
-        String defaultIndex = null;
+        String defaultIndex = request.hasIndex() ? request.getIndex() : null;
         String defaultRouting = request.hasRouting() ? request.getRouting() : null;
         FetchSourceContext defaultFetchSourceContext = FetchSourceContextProtoUtils.parseFromProtoRequest(request);
         String defaultPipeline = request.hasPipeline() ? request.getPipeline() : null;
