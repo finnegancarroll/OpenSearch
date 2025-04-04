@@ -6,12 +6,13 @@
  * compatible open source license.
  */
 
-package org.opensearch.transport.grpc;
+package org.opensearch.plugin.transport.grpc.ssl;
 
 import org.opensearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.opensearch.cluster.health.ClusterHealthStatus;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.core.common.transport.TransportAddress;
+import org.opensearch.plugin.transport.grpc.GrpcPlugin;
 import org.opensearch.plugins.NetworkPlugin;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.plugins.SecureAuxTransportSettingsProvider;
@@ -28,10 +29,10 @@ import java.util.Optional;
 
 import io.grpc.health.v1.HealthCheckResponse;
 
+import static org.opensearch.plugin.transport.grpc.ssl.SecureSettingsHelpers.getServerClientAuthNone;
+import static org.opensearch.plugin.transport.grpc.ssl.SecureSettingsHelpers.getServerClientAuthOptional;
+import static org.opensearch.plugin.transport.grpc.ssl.SecureSettingsHelpers.getServerClientAuthRequired;
 import static org.opensearch.plugins.NetworkPlugin.AuxTransport.AUX_TRANSPORT_TYPES_KEY;
-import static org.opensearch.transport.grpc.SecureSettingsHelpers.getServerClientAuthNone;
-import static org.opensearch.transport.grpc.SecureSettingsHelpers.getServerClientAuthOptional;
-import static org.opensearch.transport.grpc.SecureSettingsHelpers.getServerClientAuthRequired;
 import static org.opensearch.transport.grpc.ssl.SecureNetty4GrpcServerTransport.GRPC_SECURE_TRANSPORT_SETTING_KEY;
 
 public abstract class SecureNetty4GrpcServerTransportIT extends OpenSearchIntegTestCase {

@@ -6,7 +6,7 @@
  * compatible open source license.
  */
 
-package org.opensearch.plugin.transport.grpc;
+package org.opensearch.plugin.transport.grpc.ssl;
 
 import org.opensearch.common.network.NetworkService;
 import org.opensearch.common.settings.Settings;
@@ -24,10 +24,10 @@ import io.grpc.BindableService;
 import io.grpc.StatusRuntimeException;
 import io.grpc.health.v1.HealthCheckResponse;
 
-import static org.opensearch.transport.grpc.SecureSettingsHelpers.ConnectExceptions.BAD_CERT;
-import static org.opensearch.transport.grpc.SecureSettingsHelpers.getServerClientAuthNone;
-import static org.opensearch.transport.grpc.SecureSettingsHelpers.getServerClientAuthOptional;
-import static org.opensearch.transport.grpc.SecureSettingsHelpers.getServerClientAuthRequired;
+import static org.opensearch.plugin.transport.grpc.ssl.SecureSettingsHelpers.ConnectExceptions.BAD_CERT;
+import static org.opensearch.plugin.transport.grpc.ssl.SecureSettingsHelpers.getServerClientAuthNone;
+import static org.opensearch.plugin.transport.grpc.ssl.SecureSettingsHelpers.getServerClientAuthOptional;
+import static org.opensearch.plugin.transport.grpc.ssl.SecureSettingsHelpers.getServerClientAuthRequired;
 
 public class SecureNetty4GrpcServerTransportTests extends OpenSearchTestCase {
     private NetworkService networkService;

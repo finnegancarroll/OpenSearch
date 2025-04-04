@@ -6,7 +6,7 @@
  * compatible open source license.
  */
 
-package org.opensearch.plugin.transport.grpc;
+package org.opensearch.plugin.transport.grpc.ssl;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,8 +35,8 @@ import io.grpc.reflection.v1alpha.ServerReflectionResponse;
 import io.grpc.reflection.v1alpha.ServiceResponse;
 import io.grpc.stub.StreamObserver;
 
-import static org.opensearch.transport.grpc.SecureSettingsHelpers.CLIENT_KEYSTORE;
-import static org.opensearch.transport.grpc.SecureSettingsHelpers.getTestKeyManagerFactory;
+import static org.opensearch.plugin.transport.grpc.ssl.SecureSettingsHelpers.CLIENT_KEYSTORE;
+import static org.opensearch.plugin.transport.grpc.ssl.SecureSettingsHelpers.getTestKeyManagerFactory;
 import static io.grpc.internal.GrpcUtil.NOOP_PROXY_DETECTOR;
 
 public class NettyGrpcClient implements AutoCloseable {
@@ -122,7 +122,7 @@ public class NettyGrpcClient implements AutoCloseable {
             ApplicationProtocolNames.HTTP_2
         );
 
-        Builder() {}
+        public Builder() {}
 
         public NettyGrpcClient build() throws SSLException {
             NettyChannelBuilder channelBuilder = NettyChannelBuilder.forAddress(addr.getAddress(), addr.getPort())

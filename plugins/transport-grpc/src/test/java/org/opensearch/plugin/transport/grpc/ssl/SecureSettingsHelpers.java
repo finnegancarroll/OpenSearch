@@ -6,7 +6,7 @@
  * compatible open source license.
  */
 
-package org.opensearch.transport.grpc;
+package org.opensearch.plugin.transport.grpc.ssl;
 
 import org.opensearch.plugins.SecureAuxTransportSettingsProvider;
 import org.opensearch.transport.grpc.ssl.SecureNetty4GrpcServerTransport;
@@ -46,7 +46,7 @@ public class SecureSettingsHelpers {
      * However, depending on the default JDK provider exceptions may differ slightly,
      * so we allow a couple different error messages for each possible error.
      */
-    protected enum ConnectExceptions {
+    public enum ConnectExceptions {
         NONE(List.of("Connection succeeded")),
         UNAVAILABLE(List.of("Network closed for unknown reason")),
         BAD_CERT(List.of("bad_certificate", "certificate_required"));
@@ -66,7 +66,7 @@ public class SecureSettingsHelpers {
             return false;
         }
 
-        static ConnectExceptions get(Throwable e) {
+        public static ConnectExceptions get(Throwable e) {
             if (e.getMessage() != null && containsSubstring(UNAVAILABLE.msgList, e.getMessage())) {
                 return UNAVAILABLE;
             }
@@ -80,7 +80,7 @@ public class SecureSettingsHelpers {
         }
     }
 
-    static KeyManagerFactory getTestKeyManagerFactory(String keystorePath) {
+    public static KeyManagerFactory getTestKeyManagerFactory(String keystorePath) {
         KeyManagerFactory keyManagerFactory;
         try {
             final KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -148,7 +148,7 @@ public class SecureSettingsHelpers {
         };
     }
 
-    static SecureAuxTransportSettingsProvider getServerClientAuthRequired() {
+    public static SecureAuxTransportSettingsProvider getServerClientAuthRequired() {
         return getSecureSettingsProvider(
             ClientAuth.REQUIRE.name().toUpperCase(Locale.ROOT),
             getTestKeyManagerFactory(SERVER_KEYSTORE),
@@ -156,7 +156,7 @@ public class SecureSettingsHelpers {
         );
     }
 
-    static SecureAuxTransportSettingsProvider getServerClientAuthOptional() {
+    public static SecureAuxTransportSettingsProvider getServerClientAuthOptional() {
         return getSecureSettingsProvider(
             ClientAuth.OPTIONAL.name().toUpperCase(Locale.ROOT),
             getTestKeyManagerFactory(SERVER_KEYSTORE),
@@ -164,7 +164,7 @@ public class SecureSettingsHelpers {
         );
     }
 
-    static SecureAuxTransportSettingsProvider getServerClientAuthNone() {
+    public static SecureAuxTransportSettingsProvider getServerClientAuthNone() {
         return getSecureSettingsProvider(
             ClientAuth.NONE.name().toUpperCase(Locale.ROOT),
             getTestKeyManagerFactory(SERVER_KEYSTORE),

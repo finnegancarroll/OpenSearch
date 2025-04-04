@@ -12,8 +12,8 @@ import org.opensearch.common.network.NetworkService;
 import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.transport.PortsRange;
+import org.opensearch.plugin.transport.grpc.Netty4GrpcServerTransport;
 import org.opensearch.plugins.SecureAuxTransportSettingsProvider;
-import org.opensearch.transport.grpc.Netty4GrpcServerTransport;
 
 import java.util.List;
 

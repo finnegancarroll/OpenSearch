@@ -37,7 +37,6 @@ import static io.grpc.netty.shaded.io.netty.handler.ssl.SslProvider.OPENSSL_REFC
 /**
  * An io.grpc.SslContext which builds and delegates functionality to an internal delegate.
  * As this ssl context is provided for aux transports it operates in server mode always.
- * TODO: Currently a light SslContext wrapper - hot swap functionality will be added here.
  */
 public class SecureAuxTransportSslContext extends SslContext {
     private final SslContext sslContext;

@@ -6,15 +6,18 @@
  * compatible open source license.
  */
 
-package org.opensearch.transport.grpc;
+package org.opensearch.plugin.transport.grpc;
 
 import org.opensearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.opensearch.cluster.health.ClusterHealthStatus;
+import org.opensearch.common.network.NetworkAddress;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.core.common.transport.TransportAddress;
+import org.opensearch.plugin.transport.grpc.ssl.NettyGrpcClient;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.test.OpenSearchIntegTestCase;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -22,8 +25,8 @@ import java.util.List;
 
 import io.grpc.health.v1.HealthCheckResponse;
 
+import static org.opensearch.plugin.transport.grpc.Netty4GrpcServerTransport.GRPC_TRANSPORT_SETTING_KEY;
 import static org.opensearch.plugins.NetworkPlugin.AuxTransport.AUX_TRANSPORT_TYPES_KEY;
-import static org.opensearch.transport.grpc.Netty4GrpcServerTransport.GRPC_TRANSPORT_SETTING_KEY;
 
 public class Netty4GrpcServerTransportIT extends OpenSearchIntegTestCase {
 
@@ -44,6 +47,24 @@ public class Netty4GrpcServerTransportIT extends OpenSearchIntegTestCase {
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
         return Collections.singleton(GrpcPlugin.class);
+    }
+
+    public void testGrpcTransportStarted() {
+        // Verify that the gRPC transport is started on all nodes
+        for (String nodeName : internalCluster().getNodeNames()) {
+            Netty4GrpcServerTransport transport = internalCluster().getInstance(Netty4GrpcServerTransport.class, nodeName);
+            assertNotNull("gRPC transport should be started on node " + nodeName, transport);
+
+            // Verify that the transport is bound to an address
+            TransportAddress[] boundAddresses = transport.getBoundAddress().boundAddresses();
+            assertTrue("gRPC transport should be bound to at least one address", boundAddresses.length > 0);
+
+            // Log the bound addresses for debugging
+            for (TransportAddress address : boundAddresses) {
+                InetSocketAddress inetAddress = address.address();
+                logger.info("Node {} gRPC transport bound to {}", nodeName, NetworkAddress.format(inetAddress));
+            }
+        }
     }
 
     public void testStartGrpcTransportClusterHealth() throws Exception {

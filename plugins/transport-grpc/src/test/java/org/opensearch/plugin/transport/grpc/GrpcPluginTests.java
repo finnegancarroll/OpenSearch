@@ -34,6 +34,7 @@ import static org.opensearch.plugin.transport.grpc.Netty4GrpcServerTransport.SET
 import static org.opensearch.plugin.transport.grpc.Netty4GrpcServerTransport.SETTING_GRPC_PUBLISH_HOST;
 import static org.opensearch.plugin.transport.grpc.Netty4GrpcServerTransport.SETTING_GRPC_PUBLISH_PORT;
 import static org.opensearch.plugin.transport.grpc.Netty4GrpcServerTransport.SETTING_GRPC_WORKER_COUNT;
+import static org.opensearch.transport.grpc.ssl.SecureNetty4GrpcServerTransport.SETTING_GRPC_SECURE_PORT;
 
 public class GrpcPluginTests extends OpenSearchTestCase {
 
@@ -87,6 +88,7 @@ public class GrpcPluginTests extends OpenSearchTestCase {
 
         // Verify that all expected settings are returned
         assertTrue("SETTING_GRPC_PORT should be included", settings.contains(SETTING_GRPC_PORT));
+        assertTrue("SETTING_GRPC_SECURE_PORT should be included", settings.contains(SETTING_GRPC_SECURE_PORT));
         assertTrue("SETTING_GRPC_HOST should be included", settings.contains(SETTING_GRPC_HOST));
         assertTrue("SETTING_GRPC_PUBLISH_HOST should be included", settings.contains(SETTING_GRPC_PUBLISH_HOST));
         assertTrue("SETTING_GRPC_BIND_HOST should be included", settings.contains(SETTING_GRPC_BIND_HOST));
@@ -94,7 +96,7 @@ public class GrpcPluginTests extends OpenSearchTestCase {
         assertTrue("SETTING_GRPC_PUBLISH_PORT should be included", settings.contains(SETTING_GRPC_PUBLISH_PORT));
 
         // Verify the number of settings
-        assertEquals("Should return 6 settings", 6, settings.size());
+        assertEquals("Should return 7 settings", 7, settings.size());
     }
 
     public void testGetAuxTransports() {
