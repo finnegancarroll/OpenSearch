@@ -27,59 +27,12 @@ import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContextBuilder;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslProvider;
 
-import static io.grpc.netty.shaded.io.netty.handler.ssl.ClientAuth.NONE;
-import static io.grpc.netty.shaded.io.netty.handler.ssl.ClientAuth.OPTIONAL;
-import static io.grpc.netty.shaded.io.netty.handler.ssl.ClientAuth.REQUIRE;
-import static io.grpc.netty.shaded.io.netty.handler.ssl.SslProvider.JDK;
-import static io.grpc.netty.shaded.io.netty.handler.ssl.SslProvider.OPENSSL;
-import static io.grpc.netty.shaded.io.netty.handler.ssl.SslProvider.OPENSSL_REFCNT;
-
 /**
  * An io.grpc.SslContext which builds and delegates functionality to an internal delegate.
  * As this ssl context is provided for aux transports it operates in server mode always.
  */
 public class SecureAuxTransportSslContext extends SslContext {
     private final SslContext sslContext;
-
-    /**
-     * Simple client auth string to enum conversion helper.
-     * @param clientAuthStr client auth as string.
-     * @return ClientAuth enum.
-     */
-    public static ClientAuth clientAuthHelper(String clientAuthStr) {
-        switch (clientAuthStr) {
-            case "NONE" -> {
-                return NONE;
-            }
-            case "OPTIONAL" -> {
-                return OPTIONAL;
-            }
-            case "REQUIRE" -> {
-                return REQUIRE;
-            }
-            default -> throw new OpenSearchSecurityException("unsupported client auth: " + clientAuthStr);
-        }
-    }
-
-    /**
-     * Simple ssl provider string to enum conversion helper.
-     * @param providerStr provider as string.
-     * @return provider enum.
-     */
-    public static SslProvider providerHelper(String providerStr) {
-        switch (providerStr) {
-            case "JDK" -> {
-                return JDK;
-            }
-            case "OPENSSL" -> {
-                return OPENSSL;
-            }
-            case "OPENSSL_REFCNT" -> {
-                return OPENSSL_REFCNT;
-            }
-            default -> throw new OpenSearchSecurityException("unsupported ssl provider: " + providerStr);
-        }
-    }
 
     /**
      * Initializes a new SecureAuxTransportSslContext.
@@ -115,7 +68,7 @@ public class SecureAuxTransportSslContext extends SslContext {
             throw new OpenSearchSecurityException("Aux transport ssl context failed to initialize. No truststore provided.");
         }
         SslContextBuilder builder = SslContextBuilder.forServer(p.keyManagerFactory().get())
-            .sslProvider(providerHelper(p.sslProvider().get()))
+            .sslProvider(SslProvider.valueOf(p.sslProvider().get()))
             .protocols(p.protocols())
             .ciphers(p.cipherSuites());
         builder.applicationProtocolConfig(
@@ -126,7 +79,7 @@ public class SecureAuxTransportSslContext extends SslContext {
                 ApplicationProtocolNames.HTTP_2
             )
         );
-        builder.clientAuth(clientAuthHelper(p.clientAuth().get()));
+        builder.clientAuth(ClientAuth.valueOf(p.clientAuth().get()));
         builder.trustManager(p.trustManagerFactory().get());
         return builder.build();
     }
