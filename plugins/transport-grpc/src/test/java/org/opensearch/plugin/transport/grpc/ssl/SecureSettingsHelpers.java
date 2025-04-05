@@ -57,21 +57,14 @@ public class SecureSettingsHelpers {
             this.msgList = exceptionMsg;
         }
 
-        private static boolean containsSubstring(List<String> substrings, String str) {
-            for (String sub : substrings) {
-                if (str.contains(sub)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
         public static ConnectExceptions get(Throwable e) {
-            if (e.getMessage() != null && containsSubstring(UNAVAILABLE.msgList, e.getMessage())) {
-                return UNAVAILABLE;
-            }
-            if (e.getMessage() != null && containsSubstring(BAD_CERT.msgList, e.getMessage())) {
-                return BAD_CERT;
+            if (e.getMessage() != null) {
+                for (ConnectExceptions exception : values()) {
+                    if (exception == NONE) continue; // Skip success message
+                    if (exception.msgList.stream().anyMatch(substring -> e.getMessage().contains(substring))) {
+                        return exception;
+                    }
+                }
             }
             if (e.getCause() != null) {
                 return get(e.getCause());
