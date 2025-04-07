@@ -57,7 +57,11 @@ public class SecureNetty4GrpcServerTransport extends Netty4GrpcServerTransport {
         super(settings, services, networkService);
         this.port = SecureNetty4GrpcServerTransport.SETTING_GRPC_SECURE_PORT.get(settings);
         this.portSettingKey = SecureNetty4GrpcServerTransport.SETTING_GRPC_SECURE_PORT.getKey();
-        this.sslContext = new SecureAuxTransportSslContext(secureTransportSettingsProvider);
+        try {
+            this.sslContext = new SslContextGrpcServerAdapter(secureTransportSettingsProvider);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create SSL context for grpc server", e);
+        }
         this.addServerConfig((NettyServerBuilder builder) -> builder.sslContext(this.sslContext));
     }
 }

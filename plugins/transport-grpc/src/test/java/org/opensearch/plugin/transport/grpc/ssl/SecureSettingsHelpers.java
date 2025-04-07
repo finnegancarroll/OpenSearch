@@ -12,12 +12,15 @@ import org.opensearch.plugins.SecureAuxTransportSettingsProvider;
 import org.opensearch.transport.grpc.ssl.SecureNetty4GrpcServerTransport;
 
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
 import java.io.IOException;
+import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.Collection;
@@ -27,6 +30,8 @@ import java.util.Optional;
 
 import io.grpc.netty.shaded.io.netty.handler.ssl.ClientAuth;
 import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+
+import static org.opensearch.test.OpenSearchTestCase.randomFrom;
 
 public class SecureSettingsHelpers {
     private static final String PROVIDER = "JDK"; // only guaranteed provider
@@ -105,36 +110,30 @@ public class SecureSettingsHelpers {
     ) {
         return new SecureAuxTransportSettingsProvider() {
             @Override
-            public Optional<SecureAuxTransportParameters> parameters() {
-                return Optional.of(new SecureAuxTransportSettingsProvider.SecureAuxTransportParameters() {
-                    @Override
-                    public Optional<String> sslProvider() {
-                        return Optional.of(PROVIDER);
-                    }
+            public Optional<SSLContext> buildSSLContext() throws NoSuchAlgorithmException, KeyManagementException {
+                // Chose a random protocol from among supported test defaults
+                String protocol = randomFrom(DEFAULT_SSL_PROTOCOLS);
+                // Default JDK provider
+                SSLContext testContext = SSLContext.getInstance(protocol);
+                testContext.init(
+                    keyMngerFactory.getKeyManagers(),
+                    trustMngerFactory.getTrustManagers(),
+                    new SecureRandom()
+                );
+                return Optional.of(testContext);
+            }
 
+            @Override
+            public Optional<SecureAuxTransportParameters> parameters() {
+                return Optional.of(new SecureAuxTransportParameters() {
                     @Override
                     public Optional<String> clientAuth() {
                         return Optional.of(clientAuth);
                     }
 
                     @Override
-                    public Collection<String> protocols() {
-                        return List.of(DEFAULT_SSL_PROTOCOLS);
-                    }
-
-                    @Override
                     public Collection<String> cipherSuites() {
                         return List.of(DEFAULT_CIPHERS);
-                    }
-
-                    @Override
-                    public Optional<KeyManagerFactory> keyManagerFactory() {
-                        return Optional.of(keyMngerFactory);
-                    }
-
-                    @Override
-                    public Optional<TrustManagerFactory> trustManagerFactory() {
-                        return Optional.of(trustMngerFactory);
                     }
                 });
             }
