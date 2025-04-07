@@ -115,11 +115,7 @@ public class SecureSettingsHelpers {
                 String protocol = randomFrom(DEFAULT_SSL_PROTOCOLS);
                 // Default JDK provider
                 SSLContext testContext = SSLContext.getInstance(protocol);
-                testContext.init(
-                    keyMngerFactory.getKeyManagers(),
-                    trustMngerFactory.getTrustManagers(),
-                    new SecureRandom()
-                );
+                testContext.init(keyMngerFactory.getKeyManagers(), trustMngerFactory.getTrustManagers(), new SecureRandom());
                 return Optional.of(testContext);
             }
 
