@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -108,8 +109,21 @@ public class Netty4GrpcServerTransport extends AuxTransport {
         Setting.Property.NodeScope
     );
 
+
     /**
      * Configure size of thread pool backing this transport server.
+     * IO workers handle accepting new connections and receiving incoming HTTP2 requests.
+     * Includes TLS and compression overhead.
+     */
+    public static final Setting<Integer> SETTING_GRPC_IO_WORKER_COUNT = new Setting<>(
+        "grpc.netty.io_worker_count",
+        (s) -> Integer.toString(OpenSearchExecutors.allocatedProcessors(s)),
+        (s) -> Setting.parseInt(s, 1, "grpc.netty.io_worker_count"),
+        Setting.Property.NodeScope
+    );
+
+    /**
+     * Configure size of thread pool for executing application code of gRPC services and stubs.
      */
     public static final Setting<Integer> SETTING_GRPC_WORKER_COUNT = new Setting<>(
         "grpc.netty.worker_count",
@@ -193,6 +207,7 @@ public class Netty4GrpcServerTransport extends AuxTransport {
     private final String[] bindHosts;
     private final String[] publishHosts;
     private final int nettyEventLoopThreads;
+    private final int applicationWorkerThreads;
     private final long maxInboundMessageSize;
     private final long maxConcurrentConnectionCalls;
     private final TimeValue maxConnectionAge;
@@ -223,7 +238,8 @@ public class Netty4GrpcServerTransport extends AuxTransport {
         this.publishHosts = (grpcPublishHost.isEmpty() ? NetworkService.GLOBAL_NETWORK_PUBLISH_HOST_SETTING.get(settings) : grpcPublishHost)
             .toArray(Strings.EMPTY_ARRAY);
         this.port = SETTING_GRPC_PORT.get(settings);
-        this.nettyEventLoopThreads = SETTING_GRPC_WORKER_COUNT.get(settings);
+        this.nettyEventLoopThreads = SETTING_GRPC_IO_WORKER_COUNT.get(settings);
+        this.applicationWorkerThreads = SETTING_GRPC_WORKER_COUNT.get(settings);
         this.maxInboundMessageSize = SETTING_GRPC_MAX_MSG_SIZE.get(settings).getBytes();
         this.maxConcurrentConnectionCalls = SETTING_GRPC_MAX_CONCURRENT_CONNECTION_CALLS.get(settings);
         this.maxConnectionAge = SETTING_GRPC_MAX_CONNECTION_AGE.get(settings);
@@ -356,9 +372,10 @@ public class Netty4GrpcServerTransport extends AuxTransport {
             try {
                 final InetSocketAddress address = new InetSocketAddress(hostAddress, portNumber);
                 final NettyServerBuilder serverBuilder = NettyServerBuilder.forAddress(address)
-                    .directExecutor()
                     .bossEventLoopGroup(eventLoopGroup)
                     .workerEventLoopGroup(eventLoopGroup)
+                    .channelType(NioServerSocketChannel.class)
+                    .executor(Executors.newFixedThreadPool(applicationWorkerThreads))
                     .maxInboundMessageSize((int) maxInboundMessageSize)
                     .maxConcurrentCallsPerConnection((int) maxConcurrentConnectionCalls)
                     .maxConnectionAge(maxConnectionAge.duration(), maxConnectionAge.timeUnit())

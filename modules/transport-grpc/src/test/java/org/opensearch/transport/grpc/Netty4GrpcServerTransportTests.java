@@ -181,7 +181,7 @@ public class Netty4GrpcServerTransportTests extends OpenSearchTestCase {
         // Create settings with a specific worker count
         Settings settings = Settings.builder()
             .put(Netty4GrpcServerTransport.SETTING_GRPC_PORT.getKey(), OpenSearchTestCase.getPortRange())
-            .put(Netty4GrpcServerTransport.SETTING_GRPC_WORKER_COUNT.getKey(), 4)
+            .put(Netty4GrpcServerTransport.SETTING_GRPC_IO_WORKER_COUNT.getKey(), 4)
             .build();
 
         try (Netty4GrpcServerTransport transport = new Netty4GrpcServerTransport(settings, services, networkService)) {
