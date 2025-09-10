@@ -217,7 +217,8 @@ public class Netty4GrpcServerTransport extends AuxTransport {
     private final List<UnaryOperator<NettyServerBuilder>> serverBuilderConfigs = new ArrayList<>();
 
     private volatile BoundTransportAddress boundAddress;
-    private volatile EventLoopGroup eventLoopGroup;
+    private volatile EventLoopGroup IOEventLoopGroup;
+    private volatile EventLoopGroup workerEventLoopGroup;
 
     /**
      * Creates a new Netty4GrpcServerTransport instance.
@@ -275,7 +276,8 @@ public class Netty4GrpcServerTransport extends AuxTransport {
     protected void doStart() {
         boolean success = false;
         try {
-            this.eventLoopGroup = new NioEventLoopGroup(nettyEventLoopThreads, daemonThreadFactory(settings, "grpc_event_loop"));
+            this.IOEventLoopGroup = new NioEventLoopGroup(nettyEventLoopThreads, daemonThreadFactory(settings, "grpc_io_event_loop"));
+            this.workerEventLoopGroup = new NioEventLoopGroup(applicationWorkerThreads, daemonThreadFactory(settings, "grpc_app_event_loop"));
             bindServer();
             success = true;
             logger.info("Started gRPC server on port {}", port);
@@ -305,14 +307,23 @@ public class Netty4GrpcServerTransport extends AuxTransport {
                 }
             }
         }
-        if (eventLoopGroup != null) {
+        if (IOEventLoopGroup != null) {
             try {
-                eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS).await();
+                IOEventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS).await();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                logger.warn("Failed to shut down event loop group");
+                logger.warn("Failed to shut down io event loop group");
             }
         }
+        if (workerEventLoopGroup != null) {
+            try {
+                workerEventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS).await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.warn("Failed to shut down application event loop group");
+            }
+        }
+
     }
 
     /**
@@ -321,7 +332,8 @@ public class Netty4GrpcServerTransport extends AuxTransport {
      */
     @Override
     protected void doClose() {
-        eventLoopGroup.close();
+        IOEventLoopGroup.close();
+        workerEventLoopGroup.close();
     }
 
     private void bindServer() {
@@ -372,16 +384,15 @@ public class Netty4GrpcServerTransport extends AuxTransport {
             try {
                 final InetSocketAddress address = new InetSocketAddress(hostAddress, portNumber);
                 final NettyServerBuilder serverBuilder = NettyServerBuilder.forAddress(address)
-                    .bossEventLoopGroup(eventLoopGroup)
-                    .workerEventLoopGroup(eventLoopGroup)
+                    .bossEventLoopGroup(IOEventLoopGroup)
+                    .workerEventLoopGroup(IOEventLoopGroup)
                     .channelType(NioServerSocketChannel.class)
-                    .executor(Executors.newFixedThreadPool(applicationWorkerThreads))
+                    .executor(workerEventLoopGroup)
                     .maxInboundMessageSize((int) maxInboundMessageSize)
                     .maxConcurrentCallsPerConnection((int) maxConcurrentConnectionCalls)
                     .maxConnectionAge(maxConnectionAge.duration(), maxConnectionAge.timeUnit())
                     .maxConnectionIdle(maxConnectionIdle.duration(), maxConnectionIdle.timeUnit())
                     .keepAliveTimeout(keepAliveTimeout.duration(), keepAliveTimeout.timeUnit())
-                    .channelType(NioServerSocketChannel.class)
                     .addService(new HealthStatusManager().getHealthService())
                     .addService(ProtoReflectionService.newInstance());
 
