@@ -32,7 +32,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -108,7 +107,6 @@ public class Netty4GrpcServerTransport extends AuxTransport {
         Function.identity(),
         Setting.Property.NodeScope
     );
-
 
     /**
      * Configure size of thread pool backing this transport server.
@@ -277,7 +275,10 @@ public class Netty4GrpcServerTransport extends AuxTransport {
         boolean success = false;
         try {
             this.IOEventLoopGroup = new NioEventLoopGroup(nettyEventLoopThreads, daemonThreadFactory(settings, "grpc_io_event_loop"));
-            this.workerEventLoopGroup = new NioEventLoopGroup(applicationWorkerThreads, daemonThreadFactory(settings, "grpc_app_event_loop"));
+            this.workerEventLoopGroup = new NioEventLoopGroup(
+                applicationWorkerThreads,
+                daemonThreadFactory(settings, "grpc_app_event_loop")
+            );
             bindServer();
             success = true;
             logger.info("Started gRPC server on port {}", port);
