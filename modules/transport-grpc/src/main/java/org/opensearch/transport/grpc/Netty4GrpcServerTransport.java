@@ -356,15 +356,14 @@ public class Netty4GrpcServerTransport extends AuxTransport {
             try {
                 final InetSocketAddress address = new InetSocketAddress(hostAddress, portNumber);
                 final NettyServerBuilder serverBuilder = NettyServerBuilder.forAddress(address)
-                    .directExecutor()
                     .bossEventLoopGroup(eventLoopGroup)
                     .workerEventLoopGroup(eventLoopGroup)
+                    .channelType(NioServerSocketChannel.class)
                     .maxInboundMessageSize((int) maxInboundMessageSize)
                     .maxConcurrentCallsPerConnection((int) maxConcurrentConnectionCalls)
                     .maxConnectionAge(maxConnectionAge.duration(), maxConnectionAge.timeUnit())
                     .maxConnectionIdle(maxConnectionIdle.duration(), maxConnectionIdle.timeUnit())
                     .keepAliveTimeout(keepAliveTimeout.duration(), keepAliveTimeout.timeUnit())
-                    .channelType(NioServerSocketChannel.class)
                     .addService(new HealthStatusManager().getHealthService())
                     .addService(ProtoReflectionService.newInstance());
 
