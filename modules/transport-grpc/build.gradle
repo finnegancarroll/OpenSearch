@@ -6,8 +6,13 @@
  * compatible open source license.
  */
 
+repositories {
+  mavenLocal()
+}
+
 apply plugin: 'opensearch.testclusters'
 apply plugin: 'opensearch.internal-cluster-test'
+
 
 opensearchplugin {
   description = 'gRPC based transport implementation'

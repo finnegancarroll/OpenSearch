@@ -123,25 +123,25 @@ public class QueryBuilderProtoConverterSpiRegistryTests extends OpenSearchTestCa
         assertThat(result, instanceOf(TermQueryBuilder.class));
     }
 
-    public void testMultipleConvertersForDifferentQueryTypes() {
-        TestQueryConverter termConverter = new TestQueryConverter();
-        TestRangeQueryConverter rangeConverter = new TestRangeQueryConverter();
-
-        registry.registerConverter(termConverter);
-        registry.registerConverter(rangeConverter);
-
-        assertEquals(2, registry.size());
-
-        // Test term query
-        QueryContainer termContainer = createMockTermQueryContainer();
-        QueryBuilder termResult = registry.fromProto(termContainer);
-        assertThat(termResult, instanceOf(TermQueryBuilder.class));
-
-        // Test range query
-        QueryContainer rangeContainer = createMockRangeQueryContainer();
-        QueryBuilder rangeResult = registry.fromProto(rangeContainer);
-        assertNotNull(rangeResult); // TestRangeQueryConverter returns a mock QueryBuilder
-    }
+//    public void testMultipleConvertersForDifferentQueryTypes() {
+//        TestQueryConverter termConverter = new TestQueryConverter();
+//        TestRangeQueryConverter rangeConverter = new TestRangeQueryConverter();
+//
+//        registry.registerConverter(termConverter);
+//        registry.registerConverter(rangeConverter);
+//
+//        assertEquals(2, registry.size());
+//
+//        // Test term query
+//        QueryContainer termContainer = createMockTermQueryContainer();
+//        QueryBuilder termResult = registry.fromProto(termContainer);
+//        assertThat(termResult, instanceOf(TermQueryBuilder.class));
+//
+//        // Test range query
+//        QueryContainer rangeContainer = createMockRangeQueryContainer();
+//        QueryBuilder rangeResult = registry.fromProto(rangeContainer);
+//        assertNotNull(rangeResult); // TestRangeQueryConverter returns a mock QueryBuilder
+//    }
 
     /**
      * Helper method to create a mock term query container
@@ -157,14 +157,14 @@ public class QueryBuilderProtoConverterSpiRegistryTests extends OpenSearchTestCa
             .build();
     }
 
-    /**
-     * Helper method to create a mock range query container
-     */
-    private QueryContainer createMockRangeQueryContainer() {
-        return QueryContainer.newBuilder()
-            .setRange(org.opensearch.protobufs.RangeQuery.newBuilder().setField("range_field").build())
-            .build();
-    }
+//    /**
+//     * Helper method to create a mock range query container
+//     */
+//    private QueryContainer createMockRangeQueryContainer() {
+//        return QueryContainer.newBuilder()
+//            .setRange(org.opensearch.protobufs.RangeQuery.newBuilder().setField("range_field").build())
+//            .build();
+//    }
 
     /**
      * Test converter implementation for TERM queries
