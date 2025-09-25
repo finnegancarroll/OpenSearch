@@ -8,12 +8,12 @@
 
 package org.opensearch.transport.grpc.proto.request.search.aggs;
 
-import org.opensearch.test.OpenSearchTestCase;
+/**
+ * Converter util for DateHistogramAggregation request object.
+ */
+public class DateHistogramAggregationBuilderProtoUtils {
 
-public class TermsAggregationBuilderProtoUtilsTests  extends OpenSearchTestCase {
-
-    public void testTermsAggregationBuilderProtoUtils() {
-        assert false;
+    private DateHistogramAggregationBuilderProtoUtils() {
+        // Utility class, no instances
     }
-
 }

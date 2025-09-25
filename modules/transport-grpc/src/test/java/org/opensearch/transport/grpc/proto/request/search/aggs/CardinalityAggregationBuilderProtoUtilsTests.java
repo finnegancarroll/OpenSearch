@@ -10,7 +10,7 @@ package org.opensearch.transport.grpc.proto.request.search.aggs;
 
 import org.opensearch.test.OpenSearchTestCase;
 
-public class TermsAggregationBuilderProtoUtilsTests  extends OpenSearchTestCase {
+public class CardinalityAggregationBuilderProtoUtilsTests extends OpenSearchTestCase {
 
     public void testTermsAggregationBuilderProtoUtils() {
         assert false;

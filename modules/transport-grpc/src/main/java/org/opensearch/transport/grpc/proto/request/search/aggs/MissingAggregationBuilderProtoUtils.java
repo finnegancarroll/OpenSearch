@@ -8,12 +8,14 @@
 
 package org.opensearch.transport.grpc.proto.request.search.aggs;
 
-import org.opensearch.test.OpenSearchTestCase;
+/**
+ * Converter util for MissingAggregation request object.
+ */
+public class MissingAggregationBuilderProtoUtils {
 
-public class TermsAggregationBuilderProtoUtilsTests  extends OpenSearchTestCase {
-
-    public void testTermsAggregationBuilderProtoUtils() {
-        assert false;
+    private MissingAggregationBuilderProtoUtils() {
+        // Utility class, no instances
     }
+
 
 }
