@@ -10,24 +10,33 @@ package org.opensearch.transport.grpc.proto.request.search.aggs;
 
 import org.opensearch.protobufs.CardinalityAggregation;
 import org.opensearch.protobufs.FieldValue;
-import org.opensearch.protobufs.ObjectMap;
 import org.opensearch.script.Script;
 import org.opensearch.search.aggregations.metrics.CardinalityAggregationBuilder;
-import org.opensearch.transport.grpc.proto.request.common.ObjectMapProtoUtils;
 import org.opensearch.transport.grpc.proto.request.common.ScriptProtoUtils;
 import org.opensearch.transport.grpc.proto.response.common.FieldValueProtoUtils;
 
 import java.io.IOException;
 
 /**
- * Converter util for CardinalityAggregation request object.
+ * Converter utility for CardinalityAggregation protobuf request object.
  */
 public class CardinalityAggregationBuilderProtoUtils {
 
+    /**
+     * Private no-op.
+     */
     private CardinalityAggregationBuilderProtoUtils() {
         // Utility class, no instances
     }
 
+    /**
+     * Converts an org.opensearch.protobufs.CardinalityAggregation to an OpenSearch CardinalityAggregationBuilder.
+     * Somewhat resembles the cardinality aggregation ObjectParser<CardinalityAggregationBuilder, String> of
+     * {@link org.opensearch.search.aggregations.metrics.CardinalityAggregationBuilder}.
+     * @param cardinalityAggregation protobuf representation of cardinality aggregation.
+     * @return OpenSearch internal cardinality aggregation.
+     * @throws IOException if there's an error during parsing
+     */
     protected static CardinalityAggregationBuilder fromProto(CardinalityAggregation cardinalityAggregation) throws IOException {
         // TODO: Replace temp name with actual when api spec is updated
         CardinalityAggregationBuilder builder = new CardinalityAggregationBuilder("_name");

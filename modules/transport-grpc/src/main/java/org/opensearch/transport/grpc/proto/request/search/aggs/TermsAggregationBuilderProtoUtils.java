@@ -38,6 +38,9 @@ import static org.opensearch.search.aggregations.InternalOrder.KEY_DESC;
  */
 public class TermsAggregationBuilderProtoUtils {
 
+    /**
+     * Private no-op.
+     */
     private TermsAggregationBuilderProtoUtils() {
         // Utility class, no instances
     }

@@ -22,10 +22,21 @@ import java.io.IOException;
  */
 public class MissingAggregationBuilderProtoUtils {
 
+    /**
+     * Private no-op.
+     */
     private MissingAggregationBuilderProtoUtils() {
         // Utility class, no instances
     }
 
+    /**
+     * Converts an org.opensearch.protobufs.MissingAggregation to an OpenSearch MissingAggregationBuilder.
+     * Somewhat resembles the cardinality aggregation ObjectParser<MissingAggregationBuilder, String> of
+     * {@link org.opensearch.search.aggregations.bucket.missing.MissingAggregationBuilder}.
+     * @param missingAggregation protobuf representation of missing aggregation.
+     * @return OpenSearch internal missing aggregation.
+     * @throws IOException if there's an error during parsing
+     */
     protected static MissingAggregationBuilder fromProto(MissingAggregation missingAggregation) throws IOException {
         MissingAggregationBuilder builder = new MissingAggregationBuilder(missingAggregation.getName());
 
