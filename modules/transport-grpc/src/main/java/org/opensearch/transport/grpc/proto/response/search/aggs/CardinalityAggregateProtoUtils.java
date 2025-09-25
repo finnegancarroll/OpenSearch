@@ -22,7 +22,12 @@ import java.io.IOException;
  */
 public class CardinalityAggregateProtoUtils {
 
+    /**
+     * Private no-op.
+     */
     private CardinalityAggregateProtoUtils() {
         // Utility class, no instances
     }
+
+
 }

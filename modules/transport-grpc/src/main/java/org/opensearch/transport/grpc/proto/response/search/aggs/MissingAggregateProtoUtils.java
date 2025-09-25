@@ -27,6 +27,9 @@ import java.io.IOException;
  */
 public class MissingAggregateProtoUtils {
 
+    /**
+     * Private no-op.
+     */
     private MissingAggregateProtoUtils() {
         // Utility class, no instances
     }
