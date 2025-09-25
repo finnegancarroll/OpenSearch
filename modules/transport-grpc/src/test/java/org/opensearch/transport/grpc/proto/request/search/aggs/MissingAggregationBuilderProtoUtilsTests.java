@@ -15,5 +15,4 @@ public class MissingAggregationBuilderProtoUtilsTests extends OpenSearchTestCase
     public void testTermsAggregationBuilderProtoUtils() {
         assert false;
     }
-
 }

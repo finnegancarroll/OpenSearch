@@ -15,5 +15,4 @@ public class CardinalityAggregationBuilderProtoUtilsTests extends OpenSearchTest
     public void testTermsAggregationBuilderProtoUtils() {
         assert false;
     }
-
 }
