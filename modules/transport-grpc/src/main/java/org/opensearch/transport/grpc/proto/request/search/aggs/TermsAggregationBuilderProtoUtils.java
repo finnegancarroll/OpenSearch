@@ -9,6 +9,7 @@
 package org.opensearch.transport.grpc.proto.request.search.aggs;
 
 import org.opensearch.protobufs.FieldValue;
+import org.opensearch.protobufs.ObjectMap;
 import org.opensearch.protobufs.StringMap;
 import org.opensearch.protobufs.TermsInclude;
 import org.opensearch.script.Script;
@@ -18,6 +19,7 @@ import org.opensearch.search.aggregations.bucket.terms.IncludeExclude;
 import org.opensearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.opensearch.protobufs.TermsAggregation;
 import org.opensearch.search.aggregations.support.ValueType;
+import org.opensearch.transport.grpc.proto.request.common.ObjectMapProtoUtils;
 import org.opensearch.transport.grpc.proto.request.common.ScriptProtoUtils;
 import org.opensearch.transport.grpc.proto.response.common.FieldValueProtoUtils;
 
@@ -55,6 +57,11 @@ public class TermsAggregationBuilderProtoUtils {
      */
     protected static TermsAggregationBuilder fromProto(TermsAggregation termsAggregation) throws IOException {
         TermsAggregationBuilder builder = new TermsAggregationBuilder(termsAggregation.getName());
+
+        if (termsAggregation.hasMeta()) {
+            ObjectMap objMap = termsAggregation.getMeta();
+            builder.setMetadata(ObjectMapProtoUtils.fromProto(objMap));
+        }
 
         switch (termsAggregation.getCollectMode()) {
             case TERMS_AGGREGATION_COLLECT_MODE_UNSPECIFIED -> { }

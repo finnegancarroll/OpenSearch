@@ -9,13 +9,17 @@
 package org.opensearch.transport.grpc.proto.response.search.aggs;
 
 import org.opensearch.protobufs.FieldValue;
+import org.opensearch.protobufs.MissingAggregate;
 import org.opensearch.protobufs.StringMap;
 import org.opensearch.protobufs.TermsAggregation;
 import org.opensearch.protobufs.TermsInclude;
+import org.opensearch.protobufs.UnmappedTermsAggregate;
 import org.opensearch.script.Script;
 import org.opensearch.search.aggregations.Aggregator;
 import org.opensearch.search.aggregations.BucketOrder;
+import org.opensearch.search.aggregations.bucket.missing.InternalMissing;
 import org.opensearch.search.aggregations.bucket.terms.IncludeExclude;
+import org.opensearch.search.aggregations.bucket.terms.InternalTerms;
 import org.opensearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.opensearch.search.aggregations.support.ValueType;
 import org.opensearch.transport.grpc.proto.request.common.ScriptProtoUtils;
@@ -45,5 +49,17 @@ public class TermsAggregateProtoUtils {
         // Utility class, no instances
     }
 
+    /**
+     * Convert an OpenSearch terms aggregation representation into a protobuf response.
+     * Somewhat resembles `doXContentCommon()` of {@link org.opensearch.search.aggregations.bucket.terms.InternalTerms}.
+     * @param internalTerms OpenSeach internal response.
+     * @return protobuf terms aggregation response.
+     */
+    protected static UnmappedTermsAggregate.Builder toProto(InternalTerms internalTerms) {
+        UnmappedTermsAggregate.Builder builder = UnmappedTermsAggregate.newBuilder();
 
+        // ...
+
+        return builder;
+    }
 }
