@@ -47,7 +47,7 @@ public class TermsAggregationBuilderProtoUtils {
 
     /**
      * Converts an org.opensearch.protobufs.TermsAggregation to an OpenSearch TermsAggregationBuilder.
-     * Somewhat resembles the terms aggregation ObjectParser<TermsAggregationBuilder, String> of
+     * Somewhat resembles the terms aggregation ObjectParser of
      * {@link org.opensearch.search.aggregations.bucket.terms.TermsAggregationBuilder}.
      * @param termsAggregation protobuf representation of terms aggregation.
      * @return OpenSearch internal terms aggregation.

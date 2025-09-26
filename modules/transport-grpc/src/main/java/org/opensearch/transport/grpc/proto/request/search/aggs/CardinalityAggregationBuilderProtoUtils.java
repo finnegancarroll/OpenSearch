@@ -31,7 +31,7 @@ public class CardinalityAggregationBuilderProtoUtils {
 
     /**
      * Converts an org.opensearch.protobufs.CardinalityAggregation to an OpenSearch CardinalityAggregationBuilder.
-     * Somewhat resembles the cardinality aggregation ObjectParser<CardinalityAggregationBuilder, String> of
+     * Somewhat resembles the cardinality aggregation ObjectParser of
      * {@link org.opensearch.search.aggregations.metrics.CardinalityAggregationBuilder}.
      * @param cardinalityAggregation protobuf representation of cardinality aggregation.
      * @return OpenSearch internal cardinality aggregation.

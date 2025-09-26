@@ -31,7 +31,7 @@ public class MissingAggregationBuilderProtoUtils {
 
     /**
      * Converts an org.opensearch.protobufs.MissingAggregation to an OpenSearch MissingAggregationBuilder.
-     * Somewhat resembles the cardinality aggregation ObjectParser<MissingAggregationBuilder, String> of
+     * Somewhat resembles the cardinality aggregation ObjectParser of
      * {@link org.opensearch.search.aggregations.bucket.missing.MissingAggregationBuilder}.
      * @param missingAggregation protobuf representation of missing aggregation.
      * @return OpenSearch internal missing aggregation.
