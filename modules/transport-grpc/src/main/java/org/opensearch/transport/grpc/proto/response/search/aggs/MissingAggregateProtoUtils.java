@@ -8,21 +8,14 @@
 
 package org.opensearch.transport.grpc.proto.response.search.aggs;
 
-import org.opensearch.core.common.text.Text;
-import org.opensearch.core.xcontent.ToXContent;
-import org.opensearch.core.xcontent.XContentBuilder;
-import org.opensearch.protobufs.FieldValue;
+import com.google.protobuf.Descriptors;
 import org.opensearch.protobufs.MissingAggregate;
-import org.opensearch.protobufs.MissingAggregation;
 import org.opensearch.protobufs.ObjectMap;
-import org.opensearch.protobufs.StringArray;
 import org.opensearch.search.aggregations.bucket.missing.InternalMissing;
-import org.opensearch.search.aggregations.bucket.missing.MissingAggregationBuilder;
-import org.opensearch.search.fetch.subphase.highlight.HighlightField;
-import org.opensearch.transport.grpc.proto.request.common.ObjectMapProtoUtils;
-import org.opensearch.transport.grpc.proto.response.common.FieldValueProtoUtils;
 
-import java.io.IOException;
+import org.opensearch.transport.grpc.proto.response.common.ObjectMapProtoUtils;
+
+import java.util.Map;
 
 /**
  * Converter util for MissingAggregate response object.
@@ -45,8 +38,14 @@ public class MissingAggregateProtoUtils {
     protected static MissingAggregate.Builder toProto(InternalMissing internalMissing) {
         MissingAggregate.Builder builder = MissingAggregate.newBuilder();
 
-        // ...
+        ObjectMap.Builder objectMap = ObjectMap.newBuilder();
+        for (Map.Entry<String, Object> entry : internalMissing.getMetadata().entrySet()) {
+            objectMap.putFields(entry.getKey(), ObjectMapProtoUtils.toProto(entry.getValue()));
+        }
 
+        // TODO: Handle sub aggregations...
+
+        builder.setDocCount(internalMissing.getDocCount());
         return builder;
     }
 }

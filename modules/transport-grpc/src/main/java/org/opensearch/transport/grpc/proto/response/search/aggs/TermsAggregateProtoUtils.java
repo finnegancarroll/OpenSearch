@@ -8,34 +8,13 @@
 
 package org.opensearch.transport.grpc.proto.response.search.aggs;
 
-import org.opensearch.protobufs.FieldValue;
-import org.opensearch.protobufs.MissingAggregate;
-import org.opensearch.protobufs.StringMap;
-import org.opensearch.protobufs.TermsAggregation;
-import org.opensearch.protobufs.TermsInclude;
+import org.opensearch.protobufs.ObjectMap;
+import org.opensearch.protobufs.TermsAggregateBaseVoidAllOfBuckets;
 import org.opensearch.protobufs.UnmappedTermsAggregate;
-import org.opensearch.script.Script;
-import org.opensearch.search.aggregations.Aggregator;
-import org.opensearch.search.aggregations.BucketOrder;
-import org.opensearch.search.aggregations.bucket.missing.InternalMissing;
-import org.opensearch.search.aggregations.bucket.terms.IncludeExclude;
 import org.opensearch.search.aggregations.bucket.terms.InternalTerms;
-import org.opensearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
-import org.opensearch.search.aggregations.support.ValueType;
-import org.opensearch.transport.grpc.proto.request.common.ScriptProtoUtils;
-import org.opensearch.transport.grpc.proto.response.common.FieldValueProtoUtils;
+import org.opensearch.transport.grpc.proto.response.common.ObjectMapProtoUtils;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-
-import static org.opensearch.search.aggregations.BucketOrder.aggregation;
-import static org.opensearch.search.aggregations.InternalOrder.COUNT_ASC;
-import static org.opensearch.search.aggregations.InternalOrder.COUNT_DESC;
-import static org.opensearch.search.aggregations.InternalOrder.KEY_ASC;
-import static org.opensearch.search.aggregations.InternalOrder.KEY_DESC;
 
 /**
  * Converter util for TermsAggregation request object.
@@ -58,8 +37,16 @@ public class TermsAggregateProtoUtils {
     protected static UnmappedTermsAggregate.Builder toProto(InternalTerms internalTerms) {
         UnmappedTermsAggregate.Builder builder = UnmappedTermsAggregate.newBuilder();
 
-        // ...
+        ObjectMap.Builder objectMap = ObjectMap.newBuilder();
+        for (Map.Entry<String, Object> entry : internalTerms.getMetadata().entrySet()) {
+            objectMap.putFields(entry.getKey(), ObjectMapProtoUtils.toProto(entry.getValue()));
+        }
 
+        TermsAggregateBaseVoidAllOfBuckets.Builder termsBuilder = TermsAggregateBaseVoidAllOfBuckets.newBuilder();
+        
+
+        builder.setDocCountErrorUpperBound(internalTerms.getDocCountError());
+        builder.setSumOtherDocCount(internalTerms.getSumOfOtherDocCounts());
         return builder;
     }
 }
