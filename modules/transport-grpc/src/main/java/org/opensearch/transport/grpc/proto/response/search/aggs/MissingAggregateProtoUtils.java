@@ -8,7 +8,6 @@
 
 package org.opensearch.transport.grpc.proto.response.search.aggs;
 
-import com.google.protobuf.Descriptors;
 import org.opensearch.protobufs.MissingAggregate;
 import org.opensearch.protobufs.ObjectMap;
 import org.opensearch.search.aggregations.bucket.missing.InternalMissing;

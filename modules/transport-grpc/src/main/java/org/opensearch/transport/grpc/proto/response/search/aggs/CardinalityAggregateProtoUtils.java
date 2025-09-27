@@ -9,19 +9,10 @@
 package org.opensearch.transport.grpc.proto.response.search.aggs;
 
 import org.opensearch.protobufs.CardinalityAggregate;
-import org.opensearch.protobufs.CardinalityAggregation;
-import org.opensearch.protobufs.FieldValue;
-import org.opensearch.protobufs.MissingAggregate;
 import org.opensearch.protobufs.ObjectMap;
-import org.opensearch.script.Script;
-import org.opensearch.search.aggregations.bucket.missing.InternalMissing;
-import org.opensearch.search.aggregations.metrics.CardinalityAggregationBuilder;
 import org.opensearch.search.aggregations.metrics.InternalCardinality;
-import org.opensearch.transport.grpc.proto.request.common.ScriptProtoUtils;
-import org.opensearch.transport.grpc.proto.response.common.FieldValueProtoUtils;
 import org.opensearch.transport.grpc.proto.response.common.ObjectMapProtoUtils;
 
-import java.io.IOException;
 import java.util.Map;
 
 /**
