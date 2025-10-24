@@ -8,12 +8,10 @@
 
 package org.opensearch.transport.grpc.proto.request.search.aggs;
 
-import org.opensearch.protobufs.FieldValue;
 import org.opensearch.protobufs.MissingAggregation;
 import org.opensearch.protobufs.ObjectMap;
 import org.opensearch.search.aggregations.bucket.missing.MissingAggregationBuilder;
 import org.opensearch.transport.grpc.proto.request.common.ObjectMapProtoUtils;
-import org.opensearch.transport.grpc.proto.response.common.FieldValueProtoUtils;
 
 import java.io.IOException;
 
@@ -34,11 +32,12 @@ public class MissingAggregationBuilderProtoUtils {
      * Somewhat resembles the cardinality aggregation ObjectParser of
      * {@link org.opensearch.search.aggregations.bucket.missing.MissingAggregationBuilder}.
      * @param missingAggregation protobuf representation of missing aggregation.
+     * @param aggregationName user provided name for this aggregation.
      * @return OpenSearch internal missing aggregation.
      * @throws IOException if there's an error during parsing
      */
-    protected static MissingAggregationBuilder fromProto(MissingAggregation missingAggregation) throws IOException {
-        MissingAggregationBuilder builder = new MissingAggregationBuilder(missingAggregation.getName());
+    protected static MissingAggregationBuilder fromProto(MissingAggregation missingAggregation, String aggregationName) throws IOException {
+        MissingAggregationBuilder builder = new MissingAggregationBuilder(aggregationName);
 
         if (missingAggregation.hasMeta()) {
             ObjectMap objMap = missingAggregation.getMeta();
@@ -47,12 +46,6 @@ public class MissingAggregationBuilderProtoUtils {
 
         if (missingAggregation.hasField()) {
             builder.field(missingAggregation.getField());
-        }
-
-        if (missingAggregation.hasMissing()) {
-            FieldValue missingFieldValueProto = missingAggregation.getMissing();
-            Object missingFieldValueObject = FieldValueProtoUtils.fromProto(missingFieldValueProto, false);
-            builder.missing(missingFieldValueObject);
         }
 
         return builder;

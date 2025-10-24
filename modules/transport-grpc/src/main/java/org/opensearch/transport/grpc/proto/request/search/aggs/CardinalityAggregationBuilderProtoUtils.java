@@ -36,11 +36,12 @@ public class CardinalityAggregationBuilderProtoUtils {
      * Somewhat resembles the cardinality aggregation ObjectParser of
      * {@link org.opensearch.search.aggregations.metrics.CardinalityAggregationBuilder}.
      * @param cardinalityAggregation protobuf representation of cardinality aggregation.
+     * @param aggregationName user provided name for this aggregation.
      * @return OpenSearch internal cardinality aggregation.
      * @throws IOException if there's an error during parsing
      */
-    protected static CardinalityAggregationBuilder fromProto(CardinalityAggregation cardinalityAggregation) throws IOException {
-        CardinalityAggregationBuilder builder = new CardinalityAggregationBuilder(cardinalityAggregation.getName());
+    protected static CardinalityAggregationBuilder fromProto(CardinalityAggregation cardinalityAggregation, String aggregationName) throws IOException {
+        CardinalityAggregationBuilder builder = new CardinalityAggregationBuilder(aggregationName);
 
         if (cardinalityAggregation.hasMeta()) {
             ObjectMap objMap = cardinalityAggregation.getMeta();
