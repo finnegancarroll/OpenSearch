@@ -6,6 +6,10 @@
  * compatible open source license.
  */
 
+repositories {
+  mavenLocal()
+}
+
 apply plugin: 'opensearch.build'
 apply plugin: 'opensearch.publish'
 
