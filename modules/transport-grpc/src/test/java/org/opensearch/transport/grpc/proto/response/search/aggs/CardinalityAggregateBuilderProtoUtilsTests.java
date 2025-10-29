@@ -10,9 +10,9 @@ package org.opensearch.transport.grpc.proto.response.search.aggs;
 
 import org.opensearch.test.OpenSearchTestCase;
 
-public class MissingAggregateProtoUtilsTests extends OpenSearchTestCase {
+public class CardinalityAggregateBuilderProtoUtilsTests extends OpenSearchTestCase {
 
-    public void testMissingAggregateProtoUtils() {
+    public void testCardinalityAggregateProtoUtils() {
         assert false;
     }
 }

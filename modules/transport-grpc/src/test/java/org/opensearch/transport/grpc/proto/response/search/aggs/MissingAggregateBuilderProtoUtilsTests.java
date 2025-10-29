@@ -8,11 +8,15 @@
 
 package org.opensearch.transport.grpc.proto.response.search.aggs;
 
+import org.opensearch.search.aggregations.bucket.missing.InternalMissing;
 import org.opensearch.test.OpenSearchTestCase;
 
-public class CardinalityAggregateProtoUtilsTests extends OpenSearchTestCase {
+public class MissingAggregateBuilderProtoUtilsTests extends OpenSearchTestCase {
 
-    public void testCardinalityAggregateProtoUtils() {
+    public void testMissingAggregateProtoUtils() {
+        InternalMissing internalMissing = new
+
+
         assert false;
     }
 }

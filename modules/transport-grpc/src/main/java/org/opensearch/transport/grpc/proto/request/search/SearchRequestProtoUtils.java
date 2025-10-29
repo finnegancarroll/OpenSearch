@@ -20,6 +20,7 @@ import org.opensearch.protobufs.SearchRequestBody;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.search.RestSearchAction;
 import org.opensearch.search.Scroll;
+import org.opensearch.search.aggregations.AggregatorFactories;
 import org.opensearch.search.builder.SearchSourceBuilder;
 import org.opensearch.search.fetch.subphase.FetchSourceContext;
 import org.opensearch.search.internal.SearchContext;

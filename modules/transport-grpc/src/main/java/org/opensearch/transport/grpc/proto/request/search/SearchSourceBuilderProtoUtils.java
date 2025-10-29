@@ -9,12 +9,15 @@ package org.opensearch.transport.grpc.proto.request.search;
 
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.protobufs.AggregationContainer;
 import org.opensearch.protobufs.DerivedField;
 import org.opensearch.protobufs.FieldAndFormat;
 import org.opensearch.protobufs.Rescore;
 import org.opensearch.protobufs.ScriptField;
 import org.opensearch.protobufs.SearchRequestBody;
 import org.opensearch.protobufs.TrackHits;
+import org.opensearch.search.aggregations.Aggregation;
+import org.opensearch.search.aggregations.AggregationBuilder;
 import org.opensearch.search.builder.SearchSourceBuilder;
 import org.opensearch.search.sort.SortBuilder;
 import org.opensearch.transport.grpc.proto.request.common.FetchSourceContextProtoUtils;
@@ -22,6 +25,7 @@ import org.opensearch.transport.grpc.proto.request.common.ScriptProtoUtils;
 import org.opensearch.transport.grpc.proto.request.search.query.AbstractQueryBuilderProtoUtils;
 import org.opensearch.transport.grpc.proto.request.search.sort.SortBuilderProtoUtils;
 import org.opensearch.transport.grpc.proto.request.search.suggest.SuggestBuilderProtoUtils;
+import org.opensearch.transport.grpc.proto.request.search.aggs.AggregationContainerBuilderProtoUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -63,6 +67,18 @@ public class SearchSourceBuilderProtoUtils {
         }
         if (protoRequest.hasPostFilter()) {
             searchSourceBuilder.postFilter(queryUtils.parseInnerQueryBuilderProto(protoRequest.getPostFilter()));
+        }
+
+        // Handle aggregations
+        Map<String, AggregationContainer> aggregationMap = protoRequest.getAggregationsMap();
+        for (Map.Entry<String, AggregationContainer> aggEntry : aggregationMap.entrySet()) {
+            // Convert aggregation if able
+            AggregationBuilder aggregationBuilder = AggregationContainerBuilderProtoUtils.fromProto(aggEntry);
+            // Ignore unrecognized or explicitly unspecified aggregations which return null.
+            if (aggregationBuilder != null) {
+                // Add aggregation entry to request source
+                searchSourceBuilder.aggregation(aggregationBuilder);
+            }
         }
     }
 
