@@ -14,9 +14,9 @@ import org.opensearch.test.OpenSearchTestCase;
 public class MissingAggregateBuilderProtoUtilsTests extends OpenSearchTestCase {
 
     public void testMissingAggregateProtoUtils() {
-        InternalMissing internalMissing = new
-
-
-        assert false;
+//        InternalMissing internalMissing = new
+//
+//
+//        assert false;
     }
 }

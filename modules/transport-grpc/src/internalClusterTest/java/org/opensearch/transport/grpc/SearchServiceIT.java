@@ -96,10 +96,11 @@ public class SearchServiceIT extends GrpcTransportBaseIT {
             .setQ("field1:value1")
             .build();
 
+        SearchResponse searchResponse = null;
         try (NettyGrpcClient client = createGrpcClient()) {
             ManagedChannel channel = client.getChannel();
             SearchServiceGrpc.SearchServiceBlockingStub searchStub = SearchServiceGrpc.newBlockingStub(channel);
-            SearchResponse searchResponse = searchStub.search(searchRequest);
+            searchResponse = searchStub.search(searchRequest);
         }
 
         assertNotNull("Search response should not be null", searchResponse);
