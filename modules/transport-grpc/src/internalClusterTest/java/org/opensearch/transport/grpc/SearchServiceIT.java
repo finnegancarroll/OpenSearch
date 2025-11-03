@@ -15,12 +15,10 @@ import org.opensearch.protobufs.SearchRequest;
 import org.opensearch.protobufs.SearchRequestBody;
 import org.opensearch.protobufs.SearchResponse;
 import org.opensearch.protobufs.services.SearchServiceGrpc;
-import org.opensearch.search.aggregations.bucket.missing.MissingAggregationBuilder;
 import org.opensearch.transport.grpc.ssl.NettyGrpcClient;
 
 import io.grpc.ManagedChannel;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -78,6 +76,7 @@ public class SearchServiceIT extends GrpcTransportBaseIT {
         for (String testDoc : testDocs) {
             client().prepareIndex(indexName).setSource(testDoc, XContentType.JSON).get();
         }
+        client().admin().indices().prepareRefresh(indexName).get();
 
         MissingAggregation.Builder missingAgg = MissingAggregation.newBuilder()
             .setField("age");
@@ -93,10 +92,9 @@ public class SearchServiceIT extends GrpcTransportBaseIT {
         SearchRequest searchRequest = SearchRequest.newBuilder()
             .addIndex(indexName)
             .setRequestBody(requestBody)
-            .setQ("field1:value1")
             .build();
 
-        SearchResponse searchResponse = null;
+        SearchResponse searchResponse;
         try (NettyGrpcClient client = createGrpcClient()) {
             ManagedChannel channel = client.getChannel();
             SearchServiceGrpc.SearchServiceBlockingStub searchStub = SearchServiceGrpc.newBlockingStub(channel);
@@ -105,7 +103,7 @@ public class SearchServiceIT extends GrpcTransportBaseIT {
 
         assertNotNull("Search response should not be null", searchResponse);
         assertTrue("Search response should have hits", searchResponse.getHits().getTotal().getTotalHits().getValue() > 0);
-        assertEquals("Search response should have one hit", 1, searchResponse.getHits().getHitsCount());
-        assertEquals("Hit should have correct ID", "1", searchResponse.getHits().getHits(0).getXId());
+        assertEquals("Search response should have one hit", 4, searchResponse.getHits().getHitsCount());
+        assertEquals("Missing doc count should be 1", 1, searchResponse.getAggregationsMap().get("missing_age").getMissing().getDocCount());
     }
 }

@@ -38,8 +38,10 @@ public class MissingAggregateProtoUtils {
         MissingAggregate.Builder builder = MissingAggregate.newBuilder();
 
         ObjectMap.Builder objectMap = ObjectMap.newBuilder();
-        for (Map.Entry<String, Object> entry : internalMissing.getMetadata().entrySet()) {
-            objectMap.putFields(entry.getKey(), ObjectMapProtoUtils.toProto(entry.getValue()));
+        if (internalMissing.getMetadata() != null) {
+            for (Map.Entry<String, Object> entry : internalMissing.getMetadata().entrySet()) {
+                objectMap.putFields(entry.getKey(), ObjectMapProtoUtils.toProto(entry.getValue()));
+            }
         }
 
         // TODO: Handle sub aggregations...
