@@ -44,7 +44,7 @@ public class DocumentServiceIT extends GrpcTransportBaseIT {
                 .setObject(com.google.protobuf.ByteString.copyFromUtf8(DEFAULT_DOCUMENT_SOURCE))
                 .build();
 
-            BulkRequest bulkRequest = BulkRequest.newBuilder().addBulkRequestBody(requestBody).build();
+            BulkRequest bulkRequest = BulkRequest.newBuilder().addRequestBody(requestBody).build();
 
             // Execute the bulk request
             BulkResponse bulkResponse = documentStub.bulk(bulkRequest);

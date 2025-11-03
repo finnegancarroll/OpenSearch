@@ -158,11 +158,11 @@ public class SearchSourceBuilderProtoUtils {
                 searchSourceBuilder.scriptField(name, scriptField.script(), scriptField.ignoreFailure());
             }
         }
-        if (protoRequest.getIndicesBoostCount() > 0) {
-            for (Map.Entry<String, Float> entry : protoRequest.getIndicesBoostMap().entrySet()) {
-                searchSourceBuilder.indexBoost(entry.getKey(), entry.getValue());
-            }
-        }
+//        if (protoRequest.getIndicesBoostCount() > 0) {
+//            for (Map.Entry<String, Float> entry : protoRequest.getIndicesBoostList().entrySet()) {
+//                searchSourceBuilder.indexBoost(entry.getKey(), entry.getValue());
+//            }
+//        }
 
         // TODO support aggregations
         /*
