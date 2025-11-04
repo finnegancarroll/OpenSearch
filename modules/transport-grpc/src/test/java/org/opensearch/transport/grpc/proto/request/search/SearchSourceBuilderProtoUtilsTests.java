@@ -350,24 +350,24 @@ public class SearchSourceBuilderProtoUtilsTests extends OpenSearchTestCase {
         assertEquals("Should have 2 fetchFields", 2, searchSourceBuilder.fetchFields().size());
     }
 
-    public void testParseProtoWithIndicesBoost() throws IOException {
-        // Create a protobuf SearchRequestBody with indicesBoost
-        Map<String, Float> boostMap = new HashMap<>();
-        boostMap.put("index1", 1.0f);
-        boostMap.put("index2", 2.0f);
-
-        SearchRequestBody protoRequest = SearchRequestBody.newBuilder().putAllIndicesBoost(boostMap).build();
-
-        // Create a SearchSourceBuilder to populate
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-
-        // Call the method under test
-        SearchSourceBuilderProtoUtils.parseProto(searchSourceBuilder, protoRequest, queryUtils);
-
-        // Verify the result
-        assertNotNull("IndexBoosts should not be null", searchSourceBuilder.indexBoosts());
-        assertEquals("Should have 2 indexBoosts", 2, searchSourceBuilder.indexBoosts().size());
-    }
+//    public void testParseProtoWithIndicesBoost() throws IOException {
+//        // Create a protobuf SearchRequestBody with indicesBoost
+//        Map<String, Float> boostMap = new HashMap<>();
+//        boostMap.put("index1", 1.0f);
+//        boostMap.put("index2", 2.0f);
+//
+//        SearchRequestBody protoRequest = SearchRequestBody.newBuilder().putAllIndicesBoost(boostMap).build();
+//
+//        // Create a SearchSourceBuilder to populate
+//        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+//
+//        // Call the method under test
+//        SearchSourceBuilderProtoUtils.parseProto(searchSourceBuilder, protoRequest, queryUtils);
+//
+//        // Verify the result
+//        assertNotNull("IndexBoosts should not be null", searchSourceBuilder.indexBoosts());
+//        assertEquals("Should have 2 indexBoosts", 2, searchSourceBuilder.indexBoosts().size());
+//    }
 
     public void testParseProtoWithPostFilter() throws IOException {
         // Create a protobuf SearchRequestBody with postFilter

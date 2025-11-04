@@ -11,8 +11,16 @@ import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.search.SearchResponseSections;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
+import org.opensearch.protobufs.Aggregate;
+import org.opensearch.search.SearchHit;
+import org.opensearch.search.aggregations.Aggregation;
+import org.opensearch.search.aggregations.Aggregations;
+import org.opensearch.search.aggregations.InternalAggregation;
+import org.opensearch.transport.grpc.proto.response.search.aggs.AggregateProtoUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * Utility class for converting SearchResponse objects to Protocol Buffers.
@@ -39,9 +47,20 @@ public class SearchResponseSectionsProtoUtils {
         SearchHitsProtoUtils.toProto(response.getHits(), hitsBuilder);
         builder.setHits(hitsBuilder.build());
 
+        // Convert internal aggregation responses
+        if (response.getAggregations() != null) {
+            Map<String, Aggregation> aggsMap = response.getAggregations().asMap();
+            for (Map.Entry<String, Aggregation> entry : aggsMap.entrySet()) {
+                // Populate proto response builder with aggregate
+                AggregateProtoUtils.toProto(builder, entry.getKey(), entry.getValue());
+            }
+        }
+
         // Check for unsupported features
         checkUnsupportedFeatures(response);
     }
+
+//    private static void
 
     /**
      * Helper method to check for unsupported features.
@@ -50,11 +69,6 @@ public class SearchResponseSectionsProtoUtils {
      * @throws UnsupportedOperationException if unsupported features are present
      */
     private static void checkUnsupportedFeatures(SearchResponse response) {
-        // TODO: Implement aggregations conversion
-        if (response.getAggregations() != null) {
-            throw new UnsupportedOperationException("aggregation responses are not supported yet");
-        }
-
         // TODO: Implement suggest conversion
         if (response.getSuggest() != null) {
             throw new UnsupportedOperationException("suggest responses are not supported yet");

@@ -20,6 +20,7 @@ import org.opensearch.protobufs.SearchRequestBody;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.search.RestSearchAction;
 import org.opensearch.search.Scroll;
+import org.opensearch.search.aggregations.AggregatorFactories;
 import org.opensearch.search.builder.SearchSourceBuilder;
 import org.opensearch.search.fetch.subphase.FetchSourceContext;
 import org.opensearch.search.internal.SearchContext;
@@ -113,7 +114,7 @@ public class SearchRequestProtoUtils {
         }
         searchRequest.indices(indexArr);
 
-        SearchSourceBuilderProtoUtils.parseProto(searchRequest.source(), request.getSearchRequestBody(), queryUtils);
+        SearchSourceBuilderProtoUtils.parseProto(searchRequest.source(), request.getRequestBody(), queryUtils);
 
         final int batchedReduceSize = request.hasBatchedReduceSize()
             ? request.getBatchedReduceSize()
@@ -287,7 +288,7 @@ public class SearchRequestProtoUtils {
      */
     protected static void checkProtoTotalHits(SearchRequest protoRequest, org.opensearch.action.search.SearchRequest searchRequest) {
 
-        boolean totalHitsAsInt = protoRequest.hasTotalHitsAsInt() ? protoRequest.getTotalHitsAsInt() : false;
+        boolean totalHitsAsInt = protoRequest.hasRestTotalHitsAsInt() ? protoRequest.getRestTotalHitsAsInt() : false;
         if (totalHitsAsInt == false) {
             return;
         }
