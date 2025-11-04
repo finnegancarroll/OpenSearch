@@ -37,8 +37,10 @@ public class CardinalityAggregateProtoUtils {
         CardinalityAggregate.Builder builder = CardinalityAggregate.newBuilder();
 
         ObjectMap.Builder objectMap = ObjectMap.newBuilder();
-        for (Map.Entry<String, Object> entry : internalCardinality.getMetadata().entrySet()) {
-            objectMap.putFields(entry.getKey(), ObjectMapProtoUtils.toProto(entry.getValue()));
+        if (internalCardinality.getMetadata() != null) {
+            for (Map.Entry<String, Object> entry : internalCardinality.getMetadata().entrySet()) {
+                objectMap.putFields(entry.getKey(), ObjectMapProtoUtils.toProto(entry.getValue()));
+            }
         }
 
         builder.setValue(internalCardinality.getValue());
