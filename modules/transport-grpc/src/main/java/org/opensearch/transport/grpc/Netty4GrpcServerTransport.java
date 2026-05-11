@@ -24,6 +24,8 @@ import org.opensearch.core.common.unit.ByteSizeValue;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.AuxTransport;
 import org.opensearch.transport.BindTransportException;
+import org.opensearch.transport.grpc.interceptor.DebugHashingMarshaller;
+import org.opensearch.transport.grpc.interceptor.DebugThreadInterceptor;
 import org.opensearch.transport.grpc.interceptor.GrpcInterceptorChain;
 
 import java.io.IOException;
@@ -448,13 +450,14 @@ public class Netty4GrpcServerTransport extends AuxTransport {
                     .channelType(NioServerSocketChannel.class)
                     .addService(new HealthStatusManager().getHealthService())
                     .addService(ProtoReflectionService.newInstance())
-                    .intercept(serverInterceptor);
+                    .intercept(serverInterceptor)
+                    .intercept(new DebugThreadInterceptor());
 
                 for (UnaryOperator<NettyServerBuilder> op : serverBuilderConfigs) {
                     op.apply(serverBuilder);
                 }
 
-                services.forEach(serverBuilder::addService);
+                services.forEach(svc -> serverBuilder.addService(DebugHashingMarshaller.wrap(svc.bindService())));
 
                 Server srv = serverBuilder.build().start();
                 servers.add(srv);
