@@ -82,6 +82,7 @@ public class DefaultPlanExecutor extends HandledTransportAction<AnalyticsQueryRe
     private final TaskManager taskManager;
     private final NodeClient client;
     private final EngineContext engineContext;
+    private final AnalyticsPlugin analyticsPlugin;
     // Owned and closed by AnalyticsPlugin via the injected CoordinatorAllocatorHandle so that
     // shutdown closes this child of POOL_QUERY before arrow-base closes the root allocator.
     private final BufferAllocator coordinatorAllocator;
@@ -97,7 +98,8 @@ public class DefaultPlanExecutor extends HandledTransportAction<AnalyticsQueryRe
         EngineContext engineContext,
         NodeClient client,
         Scheduler scheduler,
-        CoordinatorAllocatorHandle coordinatorAllocatorHandle
+        CoordinatorAllocatorHandle coordinatorAllocatorHandle,
+        AnalyticsPlugin analyticsPlugin
     ) {
         super(AnalyticsQueryAction.NAME, transportService, actionFilters, AnalyticsQueryRequest::new);
         this.capabilityRegistry = capabilityRegistry;
@@ -105,6 +107,7 @@ public class DefaultPlanExecutor extends HandledTransportAction<AnalyticsQueryRe
         this.searchExecutor = threadPool.executor(ThreadPool.Names.SEARCH);
         this.threadPool = threadPool;
         this.taskManager = transportService.getTaskManager();
+        this.analyticsPlugin = analyticsPlugin;
         this.client = client;
         this.scheduler = scheduler;
         this.engineContext = engineContext;
@@ -154,6 +157,7 @@ public class DefaultPlanExecutor extends HandledTransportAction<AnalyticsQueryRe
      * wraps rows into a ProfiledResult with null profile for uniform listener handling.
      */
     private void executeInternal(RelNode logicalFragment, boolean profile, ActionListener<ProfiledResult> listener) {
+        analyticsPlugin.incrementQueryCount();
         RelMetadataQueryBase.THREAD_PROVIDERS.set(JaninoRelMetadataProvider.of(logicalFragment.getCluster().getMetadataProvider()));
         logicalFragment.getCluster().invalidateMetadataQuery();
 

@@ -39,10 +39,12 @@ import org.opensearch.core.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.env.Environment;
 import org.opensearch.env.NodeEnvironment;
+import org.opensearch.index.search.stats.SearchStats;
 import org.opensearch.plugins.ActionPlugin;
 import org.opensearch.plugins.ExtensiblePlugin;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.plugins.PluginComponentRegistry;
+import org.opensearch.plugins.SearchStatsContributor;
 import org.opensearch.repositories.RepositoriesService;
 import org.opensearch.script.ScriptService;
 import org.opensearch.threadpool.ExecutorBuilder;
@@ -56,6 +58,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 /**
@@ -64,7 +67,7 @@ import java.util.function.Supplier;
  *
  * @opensearch.internal
  */
-public class AnalyticsPlugin extends Plugin implements ExtensiblePlugin, ActionPlugin {
+public class AnalyticsPlugin extends Plugin implements ExtensiblePlugin, ActionPlugin, SearchStatsContributor {
 
     private static final Logger logger = LogManager.getLogger(AnalyticsPlugin.class);
 
@@ -96,6 +99,7 @@ public class AnalyticsPlugin extends Plugin implements ExtensiblePlugin, ActionP
     public AnalyticsPlugin() {}
 
     private final List<AnalyticsSearchBackendPlugin> backEnds = new ArrayList<>();
+    private final AtomicLong queryCount = new AtomicLong();
     private SqlOperatorTable operatorTable;
     private AnalyticsSearchService searchService;
     private CoordinatorAllocatorHandle coordinatorAllocatorHandle;
@@ -151,6 +155,7 @@ public class AnalyticsPlugin extends Plugin implements ExtensiblePlugin, ActionP
             b.bind(new TypeLiteral<QueryPlanExecutor<RelNode, Iterable<Object[]>>>() {
             }).to(DefaultPlanExecutor.class);
             b.bind(EngineContext.class).to(DefaultEngineContext.class);
+            b.bind(AnalyticsPlugin.class).toInstance(this);
             // Singleton bind on the concrete class so node-injector lookups for
             // QueryScheduler.class don't fall back to a JIT binding (which would
             // re-instantiate AnalyticsSearchTransportService, whose ctor registers
@@ -181,6 +186,26 @@ public class AnalyticsPlugin extends Plugin implements ExtensiblePlugin, ActionP
 
     static int schedulerPoolSize() {
         return Math.max(2, Runtime.getRuntime().availableProcessors() / 2);
+    }
+
+    @Override
+    public SearchStats contributeSearchStats() {
+        long count = queryCount.get();
+        if (count == 0) {
+            return null;
+        }
+        SearchStats.Stats stats = new SearchStats.Stats.Builder().queryCount(count).build();
+        return new SearchStats(stats, 0, null);
+    }
+
+    /** Increments the analytics query counter. Called by DefaultPlanExecutor on each query. */
+    public void incrementQueryCount() {
+        queryCount.incrementAndGet();
+    }
+
+    /** Returns the current query count. Visible for testing. */
+    long getQueryCount() {
+        return queryCount.get();
     }
 
     @Override
