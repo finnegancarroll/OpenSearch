@@ -176,7 +176,20 @@ public class AnalyticsSearchService implements AutoCloseable {
                         responseHandler.onBatch(batch);
                     }
                     long fragmentTookNanos = System.nanoTime() - startNanos;
-                    responseHandler.onComplete();
+                    // Extract DataFusion execution metrics
+                    byte[] metricsJson = exec.resources().getExecutionMetrics();
+                    if (LOGGER.isDebugEnabled() && metricsJson != null) {
+                        LOGGER.debug(
+                            "[FragmentMetrics] shard={} metrics={}",
+                            shard.shardId(),
+                            new String(metricsJson, java.nio.charset.StandardCharsets.UTF_8)
+                        );
+                    }
+                    if (request.profile() && metricsJson != null) {
+                        responseHandler.onCompleteWithMetrics(metricsJson);
+                    } else {
+                        responseHandler.onComplete();
+                    }
                     ResolvedFragment resolved = exec.resolved();
                     DelegationDescriptor delegation = resolved.plan().getDelegationDescriptor();
                     boolean usedSecondaryIndex = delegation != null;
@@ -338,6 +351,11 @@ public class AnalyticsSearchService implements AutoCloseable {
         void onBatch(EngineResultBatch batch) throws Exception;
 
         void onComplete();
+
+        /** Called with execution metrics when profiling is enabled. Default delegates to onComplete(). */
+        default void onCompleteWithMetrics(byte[] metrics) {
+            onComplete();
+        }
 
         void onFailure(Exception e);
     }

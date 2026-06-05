@@ -47,6 +47,7 @@ public class QueryContext {
     private final List<AnalyticsOperationListener> operationListeners;
     private final BufferAllocator allocator;
     private final boolean ownsAllocator;
+    private final boolean profile;
     private volatile ExecutorService localTaskExecutor;
     private boolean closed;  // guarded by `this`
     /**
@@ -75,7 +76,7 @@ public class QueryContext {
         int maxConcurrentShardRequestsPerNode,
         int maxShardsPerQuery
     ) {
-        this(dag, threadPool, parentTask, maxConcurrentShardRequestsPerNode, maxShardsPerQuery, List.of(), allocator, ownsAllocator);
+        this(dag, threadPool, parentTask, maxConcurrentShardRequestsPerNode, maxShardsPerQuery, List.of(), allocator, ownsAllocator, false);
     }
 
     public QueryContext(
@@ -96,7 +97,32 @@ public class QueryContext {
             maxShardsPerQuery,
             operationListeners,
             allocator,
-            ownsAllocator
+            ownsAllocator,
+            false
+        );
+    }
+
+    public QueryContext(
+        QueryDAG dag,
+        ThreadPool threadPool,
+        AnalyticsQueryTask parentTask,
+        BufferAllocator allocator,
+        boolean ownsAllocator,
+        int maxConcurrentShardRequestsPerNode,
+        int maxShardsPerQuery,
+        List<AnalyticsOperationListener> operationListeners,
+        boolean profile
+    ) {
+        this(
+            dag,
+            threadPool,
+            parentTask,
+            maxConcurrentShardRequestsPerNode,
+            maxShardsPerQuery,
+            operationListeners,
+            allocator,
+            ownsAllocator,
+            profile
         );
     }
 
@@ -109,7 +135,8 @@ public class QueryContext {
         int maxShardsPerQuery,
         List<AnalyticsOperationListener> operationListeners,
         BufferAllocator allocator,
-        boolean ownsAllocator
+        boolean ownsAllocator,
+        boolean profile
     ) {
         this.dag = dag;
         this.threadPool = threadPool;
@@ -119,10 +146,16 @@ public class QueryContext {
         this.operationListeners = operationListeners;
         this.allocator = allocator;
         this.ownsAllocator = ownsAllocator;
+        this.profile = profile;
     }
 
     public QueryDAG dag() {
         return dag;
+    }
+
+    /** Whether profiling is enabled for this query (data nodes should collect and return metrics). */
+    public boolean profile() {
+        return profile;
     }
 
     public Executor searchExecutor() {
@@ -251,7 +284,8 @@ public class QueryContext {
             DEFAULT_MAX_SHARDS_PER_QUERY,
             operationListeners,
             testAllocator,
-            true
+            true,
+            false
         );
     }
 }

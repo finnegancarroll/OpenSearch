@@ -8,6 +8,7 @@
 
 package org.opensearch.analytics.exec;
 
+import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opensearch.analytics.backend.EngineResultBatch;
@@ -152,13 +153,32 @@ public class AnalyticsSearchTransportService {
      */
     private static AnalyticsSearchService.StreamingFragmentResponseHandler channelResponseHandler(TransportChannel channel) {
         return new AnalyticsSearchService.StreamingFragmentResponseHandler() {
+            private VectorSchemaRoot pendingRoot = null;
+
             @Override
             public void onBatch(EngineResultBatch batch) throws Exception {
-                channel.sendResponseBatch(new FragmentExecutionArrowResponse(batch.getArrowRoot()));
+                if (pendingRoot != null) {
+                    channel.sendResponseBatch(new FragmentExecutionArrowResponse(pendingRoot));
+                }
+                pendingRoot = batch.getArrowRoot();
             }
 
             @Override
             public void onComplete() {
+                if (pendingRoot != null) {
+                    channel.sendResponseBatch(new FragmentExecutionArrowResponse(pendingRoot));
+                    pendingRoot = null;
+                }
+                channel.completeStream();
+            }
+
+            @Override
+            public void onCompleteWithMetrics(byte[] metrics) {
+                if (pendingRoot != null) {
+                    // Attach metrics to the last real batch
+                    channel.sendResponseBatch(new FragmentExecutionArrowResponse(pendingRoot, metrics));
+                    pendingRoot = null;
+                }
                 channel.completeStream();
             }
 
@@ -242,6 +262,11 @@ public class AnalyticsSearchTransportService {
                     while (last != null) {
                         FragmentExecutionArrowResponse next = stream.nextResponse();
                         boolean isLast = next == null;
+                        if (isLast) {
+                            // Deliver metadata BEFORE signalling stream complete (isLast=true)
+                            // to ensure it's stored on the task before the profile snapshot fires.
+                            listener.onStreamComplete(last.getMetadata());
+                        }
                         boolean keepReading = listener.onStreamResponse(last, isLast);
                         if (!keepReading) {
                             if (next != null) {
