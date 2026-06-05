@@ -286,7 +286,8 @@ public class DefaultPlanExecutor extends HandledTransportAction<AnalyticsQueryRe
                 ownsAllocator,
                 maxConcurrentShardRequestsPerNode,
                 maxShardsPerQuery,
-                List.of(queryListener)
+                List.of(queryListener),
+                profile
             );
         } catch (Exception e) {
             if (ownsAllocator) queryAllocator.close();

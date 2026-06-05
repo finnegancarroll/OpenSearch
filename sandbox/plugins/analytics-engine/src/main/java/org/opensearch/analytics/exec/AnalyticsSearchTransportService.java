@@ -8,6 +8,7 @@
 
 package org.opensearch.analytics.exec;
 
+import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opensearch.analytics.backend.EngineResultBatch;
@@ -152,13 +153,27 @@ public class AnalyticsSearchTransportService {
      */
     private static AnalyticsSearchService.StreamingFragmentResponseHandler channelResponseHandler(TransportChannel channel) {
         return new AnalyticsSearchService.StreamingFragmentResponseHandler() {
+            private VectorSchemaRoot lastRoot = null;
+
             @Override
             public void onBatch(EngineResultBatch batch) throws Exception {
                 channel.sendResponseBatch(new FragmentExecutionArrowResponse(batch.getArrowRoot()));
+                lastRoot = batch.getArrowRoot();
             }
 
             @Override
             public void onComplete() {
+                channel.completeStream();
+            }
+
+            @Override
+            public void onCompleteWithMetrics(byte[] metrics) {
+                // Send a trailing empty batch carrying only profiling metadata.
+                // Coordinator detects this via: rowCount==0 && getMetadata()!=null.
+                if (lastRoot != null) {
+                    lastRoot.setRowCount(0);
+                    channel.sendResponseBatch(new FragmentExecutionArrowResponse(lastRoot, metrics));
+                }
                 channel.completeStream();
             }
 
@@ -242,6 +257,16 @@ public class AnalyticsSearchTransportService {
                     while (last != null) {
                         FragmentExecutionArrowResponse next = stream.nextResponse();
                         boolean isLast = next == null;
+
+                        // Detect trailing profiling sentinel: empty batch with metadata attached.
+                        // Deliver metrics to the task before signalling stream complete.
+                        if (last.getRoot() != null && last.getRoot().getRowCount() == 0 && last.getMetadata() != null) {
+                            listener.onStreamComplete(last.getMetadata());
+                            last.getRoot().close();
+                            last = next;
+                            continue;
+                        }
+
                         boolean keepReading = listener.onStreamResponse(last, isLast);
                         if (!keepReading) {
                             if (next != null) {

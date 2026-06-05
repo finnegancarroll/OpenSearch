@@ -32,8 +32,10 @@ public class ExplainApiIT extends AnalyticsRestTestCase {
 
     private static final Dataset DATASET = new Dataset("calcs", "calcs");
     private static final Dataset CLICKBENCH = ClickBenchTestHelper.DATASET;
+    private static final Dataset DELEGATION = new Dataset("delegation", "delegation");
     private static boolean dataProvisioned = false;
     private static boolean clickBenchProvisioned = false;
+    private static boolean delegationProvisioned = false;
 
     @Override
     protected void onBeforeQuery() throws IOException {
@@ -47,6 +49,13 @@ public class ExplainApiIT extends AnalyticsRestTestCase {
         if (clickBenchProvisioned == false) {
             DatasetProvisioner.provision(client(), CLICKBENCH);
             clickBenchProvisioned = true;
+        }
+    }
+
+    private void ensureDelegationProvisioned() throws IOException {
+        if (delegationProvisioned == false) {
+            DatasetProvisioner.provision(client(), DELEGATION);
+            delegationProvisioned = true;
         }
     }
 
@@ -175,6 +184,78 @@ public class ExplainApiIT extends AnalyticsRestTestCase {
 
         long planningTime = ((Number) profile.get("planning_time_ms")).longValue();
         assertTrue("planning_time_ms is non-negative", planningTime >= 0);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void testExplainTasksHaveDataNodeMetrics() throws IOException {
+        ensureClickBenchProvisioned();
+        Map<String, Object> result = executeExplain(
+            "source=" + CLICKBENCH.indexName + " | stats avg(AdvEngineID) by RegionID"
+        );
+
+        Map<String, Object> profile = (Map<String, Object>) result.get("profile");
+        List<Map<String, Object>> stages = (List<Map<String, Object>>) profile.get("stages");
+
+        // Find the SHARD_FRAGMENT stage — its tasks execute on data nodes via DataFusion
+        Map<String, Object> shardStage = stages.stream()
+            .filter(s -> "SHARD_FRAGMENT".equals(s.get("execution_type")))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("no SHARD_FRAGMENT stage"));
+
+        List<Map<String, Object>> tasks = (List<Map<String, Object>>) shardStage.get("tasks");
+        assertNotNull("tasks present", tasks);
+
+        // At least one task should have data_node_metrics (shards with data)
+        boolean anyMetrics = false;
+        for (Map<String, Object> task : tasks) {
+            Map<String, Object> metrics = (Map<String, Object>) task.get("data_node_metrics");
+            if (metrics != null) {
+                anyMetrics = true;
+                // Verify expected DataFusion metric keys are present
+                assertNotNull("output_rows present", metrics.get("output_rows"));
+                assertNotNull("elapsed_compute present", metrics.get("elapsed_compute"));
+                assertNotNull("time_elapsed_scanning_total present", metrics.get("time_elapsed_scanning_total"));
+                assertTrue("output_rows is non-negative", ((Number) metrics.get("output_rows")).longValue() >= 0);
+            }
+        }
+        assertTrue("at least one task has data_node_metrics", anyMetrics);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void testExplainDelegatedQueryHasIndexedMetrics() throws IOException {
+        ensureDelegationProvisioned();
+        Map<String, Object> result = executeExplain(
+            "source=" + DELEGATION.indexName + " | where status = \"active\" | fields status, value"
+        );
+
+        Map<String, Object> profile = (Map<String, Object>) result.get("profile");
+        assertNotNull("profile present", profile);
+        List<Map<String, Object>> stages = (List<Map<String, Object>>) profile.get("stages");
+
+        // Find the SHARD_FRAGMENT stage
+        Map<String, Object> shardStage = stages.stream()
+            .filter(s -> "SHARD_FRAGMENT".equals(s.get("execution_type")))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("no SHARD_FRAGMENT stage"));
+
+        List<Map<String, Object>> tasks = (List<Map<String, Object>>) shardStage.get("tasks");
+        assertNotNull("tasks present", tasks);
+        assertFalse("has tasks", tasks.isEmpty());
+
+        Map<String, Object> task = tasks.get(0);
+        Map<String, Object> metrics = (Map<String, Object>) task.get("data_node_metrics");
+        assertNotNull("data_node_metrics present for delegated query", metrics);
+
+        // Verify IndexedTableExec custom metrics from metrics.rs
+        assertNotNull("ffm_collector_calls present", metrics.get("ffm_collector_calls"));
+        assertTrue(
+            "ffm_collector_calls > 0 (Lucene delegation occurred)",
+            ((Number) metrics.get("ffm_collector_calls")).longValue() > 0
+        );
+        assertNotNull("rows_matched present", metrics.get("rows_matched"));
+        assertEquals("rows_matched equals 10 (10% of 100 docs)", 10L, ((Number) metrics.get("rows_matched")).longValue());
+        assertNotNull("row_groups_processed present", metrics.get("row_groups_processed"));
+        assertNotNull("index_query_time present", metrics.get("index_query_time"));
     }
 
     private Map<String, Object> executeExplain(String ppl) throws IOException {
