@@ -153,12 +153,17 @@ public class AnalyticsSearchTransportService {
      */
     private static AnalyticsSearchService.StreamingFragmentResponseHandler channelResponseHandler(TransportChannel channel) {
         return new AnalyticsSearchService.StreamingFragmentResponseHandler() {
-            private VectorSchemaRoot lastRoot = null;
+            private org.apache.arrow.vector.types.pojo.Schema batchSchema = null;
+            private org.apache.arrow.memory.BufferAllocator batchAllocator = null;
 
             @Override
             public void onBatch(EngineResultBatch batch) throws Exception {
-                channel.sendResponseBatch(new FragmentExecutionArrowResponse(batch.getArrowRoot()));
-                lastRoot = batch.getArrowRoot();
+                VectorSchemaRoot root = batch.getArrowRoot();
+                if (batchSchema == null) {
+                    batchSchema = root.getSchema();
+                    batchAllocator = root.getFieldVectors().getFirst().getAllocator();
+                }
+                channel.sendResponseBatch(new FragmentExecutionArrowResponse(root));
             }
 
             @Override
@@ -168,11 +173,11 @@ public class AnalyticsSearchTransportService {
 
             @Override
             public void onCompleteWithMetrics(byte[] metrics) {
-                // Send a trailing empty batch carrying only profiling metadata.
-                // Coordinator detects this via: rowCount==0 && getMetadata()!=null.
-                if (lastRoot != null) {
-                    lastRoot.setRowCount(0);
-                    channel.sendResponseBatch(new FragmentExecutionArrowResponse(lastRoot, metrics));
+                if (batchSchema != null) {
+                    // Create a fresh empty root as a sentinel carrying profiling metadata
+                    VectorSchemaRoot sentinel = VectorSchemaRoot.create(batchSchema, batchAllocator);
+                    sentinel.setRowCount(0);
+                    channel.sendResponseBatch(new FragmentExecutionArrowResponse(sentinel, metrics));
                 }
                 channel.completeStream();
             }

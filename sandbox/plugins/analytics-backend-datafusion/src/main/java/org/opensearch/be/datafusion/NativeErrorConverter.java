@@ -55,7 +55,9 @@ public final class NativeErrorConverter {
      */
     private static final List<ErrorPattern> PATTERNS = List.of(
         new ErrorPattern("Cannot reserve untracked memory budget", NativeErrorConverter::convertAdmissionRejection),
-        new ErrorPattern("Failed to allocate", NativeErrorConverter::convertPoolLimitExceeded)
+        new ErrorPattern("Failed to allocate", NativeErrorConverter::convertPoolLimitExceeded),
+        new ErrorPattern("Query too deeply nested", NativeErrorConverter::convertRecursionLimit),
+        new ErrorPattern("recursion limit reached", NativeErrorConverter::convertRecursionLimit)
     );
 
     /**
@@ -107,6 +109,15 @@ public final class NativeErrorConverter {
         );
         rejection.initCause(match.original());
         return rejection;
+    }
+
+    private static Exception convertRecursionLimit(MatchedError match) {
+        IllegalArgumentException iae = new IllegalArgumentException(
+            "Query too deeply nested: the expression exceeds the maximum nesting depth supported by the execution engine. "
+                + "Simplify the query by reducing nested function calls."
+        );
+        iae.initCause(match.original());
+        return iae;
     }
 
     // ─── Message parsing ────────────────────────────────────────────────────────

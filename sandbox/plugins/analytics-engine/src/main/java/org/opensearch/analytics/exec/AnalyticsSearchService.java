@@ -141,8 +141,27 @@ public class AnalyticsSearchService implements AutoCloseable {
             throw e;
         } catch (Exception e) {
             listener.onFragmentFailure(resolved.queryId, resolved.stageId, resolved.shardIdStr, e);
+            if (isQueryTooComplex(e)) {
+                throw new IllegalArgumentException(
+                    "Query too deeply nested: the expression exceeds the maximum nesting depth supported by the execution engine. "
+                        + "Simplify the query by reducing nested function calls.",
+                    e
+                );
+            }
             throw new RuntimeException("Failed to start streaming fragment on " + shard.shardId(), e);
         }
+    }
+
+    private static boolean isQueryTooComplex(Exception e) {
+        Throwable current = e;
+        for (int depth = 0; current != null && depth < 10; depth++) {
+            String msg = current.getMessage();
+            if (msg != null && msg.contains("recursion limit reached")) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private record ResolvedExecution(FragmentResources resources, ResolvedFragment resolved) implements AutoCloseable {
