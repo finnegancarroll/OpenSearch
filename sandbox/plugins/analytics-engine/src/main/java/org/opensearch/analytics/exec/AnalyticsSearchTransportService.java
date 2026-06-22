@@ -193,6 +193,17 @@ public class AnalyticsSearchTransportService {
                         // Stream may already be cancelled — close sentinel to prevent leak
                         sentinel.close();
                     }
+                } else {
+                    // Empty shard: no batches were sent so batchSchema is unset.
+                    // Create a minimal sentinel with an empty schema to carry the metrics.
+                    try (var alloc = new org.apache.arrow.memory.RootAllocator(1024);
+                         VectorSchemaRoot sentinel = VectorSchemaRoot.create(
+                             new Schema(java.util.Collections.emptyList()), alloc)) {
+                        sentinel.setRowCount(0);
+                        channel.sendResponseBatch(new FragmentExecutionArrowResponse(sentinel, metrics));
+                    } catch (Exception e) {
+                        // Stream may already be cancelled — best effort
+                    }
                 }
                 channel.completeStream();
             }

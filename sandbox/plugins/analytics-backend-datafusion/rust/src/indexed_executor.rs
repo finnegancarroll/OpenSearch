@@ -756,11 +756,12 @@ async unsafe fn execute_indexed_with_context_inner(
             cross_rt_stream.schema(),
             cross_rt_stream,
         );
-        let stream_handle = crate::api::QueryStreamHandle::with_session_context(
+        let stream_handle = crate::api::QueryStreamHandle::with_physical_plan(
             wrapped,
             handle.query_context,
             handle.ctx,
             Some(permit),
+            Arc::new(empty_exec),
         );
         return Ok(Box::into_raw(Box::new(stream_handle)) as i64);
     }
