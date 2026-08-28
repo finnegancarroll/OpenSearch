@@ -149,9 +149,32 @@ pub async fn build_segments(
     // Use Utf8View — ParquetOpener's apply_file_schema_type_coercions keeps the file/table
     // schemas aligned, so QTF's coordinator-declared Utf8View matches the produced batches.
     let format = ParquetFormat::default().with_force_view_types(true);
-    let schema = FileFormat::infer_schema(&format, state, &store, object_metas)
-        .await
-        .map_err(|e| format!("infer_schema union: {}", e))?;
+    let schema = match FileFormat::infer_schema(&format, state, &store, object_metas).await {
+        Ok(schema) => schema,
+        Err(e) => {
+            // A shard can contain a MIX of scalar and LIST parquet files for the
+            // same multi_value column (per-file adaptive shape latch on the write
+            // side). DataFusion's `Schema::try_merge` rejects that mix. Reconcile
+            // scalar->LIST ("LIST wins") the same way the merge path does, then
+            // re-apply the Utf8->Utf8View coercion `force_view_types` would have.
+            //
+            // This fixes only the SCHEMA so the plan can bind. The scalar file's
+            // batch DATA is up-cast to singleton lists downstream by DataFusion's
+            // ParquetSource/PhysicalExprAdapter (arrow `cast_values_to_list`); no
+            // batch handling is needed in our scan code. See the note in
+            // `stream.rs::poll_inner`.
+            let per_file: Vec<arrow::datatypes::Schema> = segments
+                .iter()
+                .map(|s| s.arrow_schema.as_ref().clone())
+                .collect();
+            let unified = super::list_shape::unify_list_shapes(per_file);
+            let merged = arrow::datatypes::Schema::try_merge(unified)
+                .map_err(|_| format!("infer_schema union: {}", e))?;
+            std::sync::Arc::new(
+                datafusion::datasource::file_format::parquet::transform_schema_to_view(&merged),
+            )
+        }
+    };
 
     Ok((segments, schema))
 }

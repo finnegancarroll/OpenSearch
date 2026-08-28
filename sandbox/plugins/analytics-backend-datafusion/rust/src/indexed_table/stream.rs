@@ -806,6 +806,25 @@ impl IndexedStream {
             }
         };
 
+        // Note on multi_value (scalar-vs-LIST) reconciliation:
+        // A shard can mix parquet files that store a `multi_value` column as a scalar
+        // leaf (files that only saw single values) with files that store it as
+        // `LIST<element>`. The unified table schema resolved in `build_segments`
+        // (via `list_shape::unify_list_shapes`) declares such a column as LIST, so the
+        // plan expects LIST batches. No explicit up-cast is needed HERE, however:
+        // the per-row-group batches feeding `output` come from a DataFusion
+        // `ParquetSource`/`DataSourceExec` (see `parquet_bridge::create_stream_with_access_plan`),
+        // whose ParquetOpener runs the `PhysicalExprAdapter` schema rewriter. When a
+        // file's physical column is scalar `Utf8` but the logical/table schema is
+        // `List<Utf8>`, the adapter inserts a `CastExpr` that arrow implements as a
+        // singleton-list wrap — every scalar value becomes a 1-element list, nulls
+        // become `[NULL]` — before the batch ever reaches this stream. So by the time
+        // we get `output`, the column is already LIST and the reshape below only needs
+        // to reorder/strip columns and inject __row_id__.
+        // arrow cast kernel: https://github.com/apache/arrow-rs/blob/58.3.0/arrow-cast/src/cast/list.rs#L25
+        // dispatch (`(_, List(to)) => cast_values_to_list`): https://github.com/apache/arrow-rs/blob/58.3.0/arrow-cast/src/cast/mod.rs#L920
+        // cast eligibility (`(_, List(list_to)) => can_cast_types(...)`): https://github.com/apache/arrow-rs/blob/58.3.0/arrow-cast/src/cast/mod.rs#L138
+
         // Inject computed __row_id__, or reorder/strip columns to match output schema.
         // The parquet reader delivers columns in the file's physical order which may
         // differ from the table schema order (e.g. when infer_schema sorted alphabetically).

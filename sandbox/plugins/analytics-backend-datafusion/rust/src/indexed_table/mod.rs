@@ -60,6 +60,7 @@ pub mod dynamic_filter;
 pub mod eval;
 pub mod ffm_callbacks;
 pub mod index;
+pub mod list_shape;
 pub mod metrics;
 pub mod page_pruner;
 pub mod parquet_bridge;
