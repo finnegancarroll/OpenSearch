@@ -314,16 +314,21 @@ pub async unsafe fn create_session_context(
     // a cache hit and never touches the page index bytes.
     // Cache key is meta.location (Path) — same key infer_schema uses.
     // Empty shard: loop is a no-op; infer_schema is also skipped below.
+    let mut per_file_schemas: Vec<arrow::datatypes::Schema> = Vec::new();
     {
         let metadata_cache = runtime.runtime_env.cache_manager.get_file_metadata_cache();
         for meta in shard_view.object_metas.as_ref() {
-            let _ = crate::indexed_table::parquet_bridge::load_parquet_metadata_with_meta(
-                Arc::clone(&shard_view.store),
-                &meta.location,
-                meta.clone(),
-                Arc::clone(&metadata_cache),
-            )
-            .await;
+            if let Ok((file_schema, _size, _pq_meta)) =
+                crate::indexed_table::parquet_bridge::load_parquet_metadata_with_meta(
+                    Arc::clone(&shard_view.store),
+                    &meta.location,
+                    meta.clone(),
+                    Arc::clone(&metadata_cache),
+                )
+                .await
+            {
+                per_file_schemas.push(file_schema.as_ref().clone());
+            }
         }
     }
 
@@ -332,13 +337,35 @@ pub async unsafe fn create_session_context(
     let inferred: arrow::datatypes::SchemaRef = if shard_view.object_metas.is_empty() {
         Arc::new(arrow::datatypes::Schema::empty())
     } else {
-        let inferred = listing_options
+        let inferred = match listing_options
             .infer_schema(&ctx.state(), &shard_view.table_path)
             .await
-            .map_err(|e| {
-                error!("create_session_context: failed to infer schema: {}", e);
-                e
-            })?;
+        {
+            Ok(inferred) => inferred,
+            Err(e) => {
+                // A shard can contain a MIX of scalar and LIST parquet files for the
+                // same multi_value column. DataFusion's Schema::try_merge rejects that
+                // mix. Reconcile scalar->LIST ("LIST wins") the same way the merge path
+                // does, then re-apply the Utf8->Utf8View coercion infer_schema would.
+                //
+                // Schema-only fix: the ListingTable scan up-casts the scalar file's
+                // batch data to singleton lists via DataFusion's PhysicalExprAdapter
+                // (arrow `cast_values_to_list`) once the table schema is LIST.
+                let unified =
+                    crate::indexed_table::list_shape::unify_list_shapes(per_file_schemas.clone());
+                match arrow::datatypes::Schema::try_merge(unified) {
+                    Ok(merged) => Arc::new(
+                        datafusion::datasource::file_format::parquet::transform_schema_to_view(
+                            &merged,
+                        ),
+                    ),
+                    Err(_) => {
+                        error!("create_session_context: failed to infer schema: {}", e);
+                        return Err(e);
+                    }
+                }
+            }
+        };
         // Substrait's type system is narrower than Arrow's; normalize the inferred
         // schema to forms the Substrait consumer can bind against. See crate::schema_coerce.
         crate::schema_coerce::coerce_inferred_schema(inferred)
