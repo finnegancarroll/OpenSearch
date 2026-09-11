@@ -44,6 +44,7 @@ pub mod phantom_corrector;
 pub mod project_row_id_analyzer;
 pub mod project_row_id_optimizer;
 pub mod query_budget;
+pub mod substrait_consumer;
 pub mod query_executor;
 pub mod query_tracker;
 pub mod relabel_exec;
