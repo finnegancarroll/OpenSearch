@@ -80,7 +80,12 @@ public class DataFusionAnalyticsBackendPlugin implements AnalyticsSearchBackendP
 
     private static final Logger LOGGER = LogManager.getLogger(DataFusionAnalyticsBackendPlugin.class);
 
-    private static final Set<EngineCapability> ENGINE_CAPS = Set.of(EngineCapability.SORT, EngineCapability.UNION, EngineCapability.VALUES);
+    private static final Set<EngineCapability> ENGINE_CAPS = Set.of(
+        EngineCapability.SORT,
+        EngineCapability.UNION,
+        EngineCapability.VALUES,
+        EngineCapability.MULTI_VALUE_EXPAND
+    );
 
     private static final Set<FieldType> SUPPORTED_FIELD_TYPES = new HashSet<>();
     static {
@@ -113,6 +118,7 @@ public class DataFusionAnalyticsBackendPlugin implements AnalyticsSearchBackendP
         ScalarFunction.IS_NOT_TRUE,
         ScalarFunction.IS_NOT_FALSE,
         ScalarFunction.IN,
+        ScalarFunction.ARRAY_CONTAINS,
         ScalarFunction.LIKE,
         ScalarFunction.REGEXP_CONTAINS,
         ScalarFunction.SARG_PREDICATE,
@@ -184,6 +190,7 @@ public class DataFusionAnalyticsBackendPlugin implements AnalyticsSearchBackendP
         ScalarFunction.LESS_THAN,
         ScalarFunction.LESS_THAN_OR_EQUAL,
         ScalarFunction.IN,
+        ScalarFunction.ARRAY_CONTAINS,
         ScalarFunction.LIKE,
         ScalarFunction.REGEXP,
         ScalarFunction.REGEXP_CONTAINS,
