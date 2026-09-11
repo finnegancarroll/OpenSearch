@@ -32,6 +32,7 @@ public enum ScalarFunction {
     // ── Comparisons ──────────────────────────────────────────────────
     EQUALS(Category.COMPARISON, SqlKind.EQUALS),
     NOT_EQUALS(Category.COMPARISON, SqlKind.NOT_EQUALS),
+    ARRAY_CONTAINS(Category.COMPARISON, SqlKind.ARRAY_CONTAINS),
     GREATER_THAN(Category.COMPARISON, SqlKind.GREATER_THAN),
     GREATER_THAN_OR_EQUAL(Category.COMPARISON, SqlKind.GREATER_THAN_OR_EQUAL),
     LESS_THAN(Category.COMPARISON, SqlKind.LESS_THAN),
