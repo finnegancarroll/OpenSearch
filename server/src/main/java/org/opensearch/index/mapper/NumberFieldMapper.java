@@ -2225,6 +2225,13 @@ public class NumberFieldMapper extends ParametrizedFieldMapper {
 
     @Override
     public ParametrizedFieldMapper.Builder getMergeBuilder() {
-        return new Builder(simpleName(), type, ignoreMalformedByDefault, coerceByDefault).init(this);
+        // MV FIX (non-keyword multi_value): the settings-less boolean ctor leaves pluggableDataFormat
+        // = false, so the merge/re-parse builder's getParameters() -> withMultiValueParameter() would
+        // drop the `multi_value` parameter and index creation fails with
+        // "unknown parameter [multi_value] on mapper [..] of type [..]". Carry the flag from this
+        // mapper (matches keyword behavior) before init resolves parameters.
+        Builder mergeBuilder = new Builder(simpleName(), type, ignoreMalformedByDefault, coerceByDefault);
+        mergeBuilder.pluggableDataFormat = this.pluggableDataFormat;
+        return mergeBuilder.init(this);
     }
 }
