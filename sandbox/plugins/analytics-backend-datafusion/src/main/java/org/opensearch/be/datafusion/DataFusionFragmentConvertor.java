@@ -212,6 +212,9 @@ public class DataFusionFragmentConvertor implements FragmentConvertor {
         FunctionMappings.s(SqlLibraryOperators.ARRAY_LENGTH, "array_length"),
         FunctionMappings.s(SqlLibraryOperators.ARRAY_SLICE, "array_slice"),
         FunctionMappings.s(SqlLibraryOperators.ARRAY_DISTINCT, "array_distinct"),
+        // Implicit multi_value =/!= membership from the frontend emits ARRAY_CONTAINS; DataFusion's
+        // native array-membership function is array_has (registered via with_default_features).
+        FunctionMappings.s(SqlLibraryOperators.ARRAY_CONTAINS, "array_has"),
         FunctionMappings.s(MakeArrayAdapter.LOCAL_MAKE_ARRAY_OP, "make_array"),
         FunctionMappings.s(ArrayToStringAdapter.LOCAL_ARRAY_TO_STRING_OP, "array_to_string"),
         FunctionMappings.s(ArrayElementAdapter.LOCAL_ARRAY_ELEMENT_OP, "array_element"),
