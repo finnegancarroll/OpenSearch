@@ -83,7 +83,9 @@ public class MatchOnlyTextFieldMapper extends TextFieldMapper {
 
     @Override
     public ParametrizedFieldMapper.Builder getMergeBuilder() {
-        return new Builder(simpleName(), this.indexCreatedVersion, this.indexAnalyzers).init(this);
+        Builder mergeBuilder = new Builder(simpleName(), this.indexCreatedVersion, this.indexAnalyzers);
+        mergeBuilder.pluggableDataFormat = this.pluggableDataFormat;
+        return mergeBuilder.init(this);
     }
 
     /**

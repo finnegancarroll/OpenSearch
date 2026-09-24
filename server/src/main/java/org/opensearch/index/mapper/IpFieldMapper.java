@@ -730,6 +730,8 @@ public class IpFieldMapper extends ParametrizedFieldMapper {
 
     @Override
     public ParametrizedFieldMapper.Builder getMergeBuilder() {
-        return new Builder(simpleName(), ignoreMalformedByDefault, indexCreatedVersion).init(this);
+        Builder mergeBuilder = new Builder(simpleName(), ignoreMalformedByDefault, indexCreatedVersion);
+        mergeBuilder.pluggableDataFormat = this.pluggableDataFormat;
+        return mergeBuilder.init(this);
     }
 }

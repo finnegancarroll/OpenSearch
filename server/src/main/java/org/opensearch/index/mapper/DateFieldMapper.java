@@ -830,7 +830,9 @@ public final class DateFieldMapper extends ParametrizedFieldMapper {
 
     @Override
     public ParametrizedFieldMapper.Builder getMergeBuilder() {
-        return new Builder(simpleName(), resolution, null, ignoreMalformedByDefault, indexCreatedVersion).init(this);
+        Builder mergeBuilder = new Builder(simpleName(), resolution, null, ignoreMalformedByDefault, indexCreatedVersion);
+        mergeBuilder.pluggableDataFormat = this.pluggableDataFormat;
+        return mergeBuilder.init(this);
     }
 
     @Override
