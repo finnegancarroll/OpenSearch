@@ -1076,6 +1076,7 @@ public class TextFieldMapper extends ParametrizedFieldMapper {
     @Override
     public ParametrizedFieldMapper.Builder getMergeBuilder() {
         Builder builder = new Builder(simpleName(), this.indexCreatedVersion, this.indexAnalyzers, mappingPluginParameters);
+        builder.pluggableDataFormat = this.pluggableDataFormat;
         return builder.init(this);
     }
 

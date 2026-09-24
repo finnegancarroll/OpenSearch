@@ -248,7 +248,9 @@ public class BinaryFieldMapper extends ParametrizedFieldMapper {
 
     @Override
     public ParametrizedFieldMapper.Builder getMergeBuilder() {
-        return new BinaryFieldMapper.Builder(simpleName()).init(this);
+        BinaryFieldMapper.Builder mergeBuilder = new BinaryFieldMapper.Builder(simpleName());
+        mergeBuilder.pluggableDataFormat = this.pluggableDataFormat;
+        return mergeBuilder.init(this);
     }
 
     @Override
