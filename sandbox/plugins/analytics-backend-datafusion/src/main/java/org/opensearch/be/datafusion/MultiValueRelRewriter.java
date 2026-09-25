@@ -18,9 +18,12 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexShuttle;
+import org.apache.calcite.util.ImmutableBitSet;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Adds implicit element expansion for LIST-valued GROUP BY keys.
@@ -117,28 +120,44 @@ final class MultiValueRelRewriter {
 
     private static RelNode rewriteAggregate(Aggregate aggregate) {
         RelNode input = aggregate.getInput();
-        boolean changed = false;
-        // Replace each LIST GROUP BY key in-place with its row-expanded scalar element, mirroring
-        // explicit mvexpand (one row per element, duplicates preserved). Because the expansion keeps
-        // the column at the SAME ordinal with the element type, the aggregate groups by the same
-        // index and no group-set remap or output-restoring Project is needed -- so no stale
-        // LIST-typed ancestor reference is created.
+        Map<Integer, Integer> expandedGroupFields = new HashMap<>();
         for (int fieldIndex : aggregate.getGroupSet()) {
             if (input.getRowType().getFieldList().get(fieldIndex).getType().getComponentType() != null) {
-                input = new MultiValueExpandRel(input, fieldIndex);
-                changed = true;
+                MultiValueExpandRel expansion = new MultiValueExpandRel(input, fieldIndex);
+                input = expansion;
+                expandedGroupFields.put(fieldIndex, expansion.expandedFieldIndex());
             }
         }
-        if (!changed) {
+        if (expandedGroupFields.isEmpty()) {
             return aggregate;
         }
-        return aggregate.copy(
-            aggregate.getTraitSet(),
-            input,
-            aggregate.getGroupSet(),
-            aggregate.getGroupSets(),
-            aggregate.getAggCallList()
+
+        ImmutableBitSet groupSet = remap(aggregate.getGroupSet(), expandedGroupFields);
+        List<ImmutableBitSet> groupSets = ImmutableBitSet.ORDERING.immutableSortedCopy(
+            aggregate.getGroupSets().stream().map(fields -> remap(fields, expandedGroupFields)).toList()
         );
+        Aggregate rewritten = aggregate.copy(aggregate.getTraitSet(), input, groupSet, groupSets, aggregate.getAggCallList());
+
+        // Appending group keys can change their ordinal order and uses internal field names. Restore
+        // the original aggregate output order and names while retaining the expanded scalar types.
+        List<Integer> rewrittenGroupFields = groupSet.asList();
+        List<RexNode> projects = new ArrayList<>(rewritten.getRowType().getFieldCount());
+        for (int originalField : aggregate.getGroupSet()) {
+            int rewrittenField = expandedGroupFields.getOrDefault(originalField, originalField);
+            projects.add(rewritten.getCluster().getRexBuilder().makeInputRef(rewritten, rewrittenGroupFields.indexOf(rewrittenField)));
+        }
+        for (int index = groupSet.cardinality(); index < rewritten.getRowType().getFieldCount(); index++) {
+            projects.add(rewritten.getCluster().getRexBuilder().makeInputRef(rewritten, index));
+        }
+        return LogicalProject.create(rewritten, List.of(), projects, aggregate.getRowType().getFieldNames());
+    }
+
+    private static ImmutableBitSet remap(ImmutableBitSet fields, Map<Integer, Integer> replacements) {
+        ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+        for (int field : fields) {
+            builder.set(replacements.getOrDefault(field, field));
+        }
+        return builder.build();
     }
 
 }
