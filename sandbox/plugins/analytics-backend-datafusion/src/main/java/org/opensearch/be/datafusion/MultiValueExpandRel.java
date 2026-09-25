@@ -19,17 +19,16 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import java.util.List;
 
 /**
- * Backend-local relation that appends one row-expanded scalar column for a LIST input column.
- *
- * <p>The SQL frontend already represents explicit {@code mvexpand} as Correlate+Uncollect.
- * This relation is used only for implicit multi-value GROUP BY semantics, where each document
- * contributes at most once to each element bucket. The source LIST remains available to aggregate
- * calls while GROUP BY uses the appended scalar column.
+ * Backend-local relation that row-expands a LIST input column into its scalar element, REPLACING
+ * the column in-place (same ordinal, same name). This mirrors the semantics of an explicit
+ * {@code mvexpand} (Correlate+Uncollect): one output row per element, duplicates preserved (no
+ * distinct dedup). Used for implicit multi-value GROUP BY (e.g. {@code stats count() by tags}),
+ * so the downstream aggregate references the same column position with a scalar element type and
+ * no stale LIST-typed ancestor reference is left behind.
  */
 final class MultiValueExpandRel extends SingleRel {
 
     private final int fieldIndex;
-    private final String expandedFieldName;
 
     MultiValueExpandRel(RelNode input, int fieldIndex) {
         super(input.getCluster(), input.getTraitSet(), input);
@@ -37,30 +36,25 @@ final class MultiValueExpandRel extends SingleRel {
         if (input.getRowType().getFieldList().get(fieldIndex).getType().getComponentType() == null) {
             throw new IllegalArgumentException("field " + fieldIndex + " is not a collection");
         }
-        String candidate = "___mvexpand_" + fieldIndex;
-        while (input.getRowType().getFieldNames().contains(candidate)) {
-            candidate += "_";
-        }
-        this.expandedFieldName = candidate;
     }
 
     int fieldIndex() {
         return fieldIndex;
     }
 
-    int expandedFieldIndex() {
-        return getInput().getRowType().getFieldCount();
-    }
-
     @Override
     protected RelDataType deriveRowType() {
         RelDataTypeFactory.Builder builder = getCluster().getTypeFactory().builder();
         List<RelDataTypeField> fields = getInput().getRowType().getFieldList();
-        for (RelDataTypeField field : fields) {
-            builder.add(field.getName(), field.getType());
+        for (int i = 0; i < fields.size(); i++) {
+            RelDataTypeField field = fields.get(i);
+            if (i == fieldIndex) {
+                RelDataType elementType = field.getType().getComponentType();
+                builder.add(field.getName(), getCluster().getTypeFactory().createTypeWithNullability(elementType, true));
+            } else {
+                builder.add(field.getName(), field.getType());
+            }
         }
-        RelDataType elementType = fields.get(fieldIndex).getType().getComponentType();
-        builder.add(expandedFieldName, getCluster().getTypeFactory().createTypeWithNullability(elementType, true));
         return builder.build();
     }
 
@@ -72,7 +66,7 @@ final class MultiValueExpandRel extends SingleRel {
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw).item("field", getInput().getRowType().getFieldNames().get(fieldIndex))
-            .item("output", expandedFieldName)
-            .item("distinct", true);
+            .item("mode", "replace")
+            .item("distinct", false);
     }
 }
