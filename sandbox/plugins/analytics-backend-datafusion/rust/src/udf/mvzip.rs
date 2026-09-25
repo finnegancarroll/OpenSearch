@@ -30,7 +30,7 @@ use std::sync::Arc;
 use datafusion::arrow::array::{
     Array, ArrayRef, AsArray, BooleanArray, Float32Array, Float64Array, GenericListArray,
     Int16Array, Int32Array, Int64Array, Int8Array, ListArray, ListBuilder, StringArray,
-    StringBuilder, UInt16Array, UInt32Array, UInt64Array, UInt8Array,
+    StringBuilder, StringViewArray, UInt16Array, UInt32Array, UInt64Array, UInt8Array,
 };
 use datafusion::arrow::datatypes::{DataType, Field};
 use datafusion::common::{plan_err, ScalarValue};
@@ -216,6 +216,20 @@ fn elements_as_strings(arr: &dyn Array) -> Result<Vec<Option<String>>> {
     }
     match arr.data_type() {
         DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View => {
+            // A real multi_value keyword field yields Utf8View list elements. as_string_opt::<i32>()
+            // only produces a Utf8 StringArray (and ::<i64>() a LargeUtf8), so a StringViewArray must
+            // be downcast explicitly first, otherwise both fall through and mvzip fails with
+            // 'string element downcast failed for Utf8View'. Mirrors mvappend's element handling.
+            if let Some(view) = arr.as_any().downcast_ref::<StringViewArray>() {
+                for i in 0..n {
+                    if view.is_null(i) {
+                        out.push(None);
+                    } else {
+                        out.push(Some(view.value(i).to_string()));
+                    }
+                }
+                return Ok(out);
+            }
             // String children may arrive as any of the three Utf8 flavors; AsArray
             // handles the dispatch for us.
             let s = arr.as_string_opt::<i32>();
