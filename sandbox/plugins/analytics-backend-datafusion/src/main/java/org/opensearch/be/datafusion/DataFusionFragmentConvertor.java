@@ -861,11 +861,13 @@ public class DataFusionFragmentConvertor implements FragmentConvertor {
             @Override
             public Rel visitOther(RelNode other) {
                 if (other instanceof MultiValueExpandRel expand) {
+                    // Implicit GROUP BY expansion: append the expanded scalar column (keep the
+                    // source LIST available for aggregate args) and preserve duplicate elements.
                     MultiValueExpandSpec spec = new MultiValueExpandSpec(
                         expand.fieldIndex(),
                         null,
                         true,
-                        true,
+                        false,
                         typeConverter.toNamedStruct(expand.getRowType()).struct()
                     );
                     return ExtensionSingle.from(new MultiValueExpandDetail(spec), apply(expand.getInput())).build();
